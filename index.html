@@ -169,7 +169,7 @@
       <p id="streakMessage" style="color: var(--text-muted); margin: 0;">Keep pushing forward!</p>
     </div>
 
-    <!-- // [NEW] Custom Presets Manager Card -->
+    <!-- Custom Presets Manager Card -->
     <div class="card">
       <h3>Manage Workout Presets</h3>
       <div style="display: flex; gap: 10px; margin-bottom: 12px;">
@@ -206,7 +206,7 @@
       </div>
       <button class="btn" onclick="logWorkoutToday()">Log Workout for Today</button>
       
-      <!-- // [NEW] Undo / Remove Last Log Button -->
+      <!-- Undo / Remove Last Log Button -->
       <button class="btn btn-danger" onclick="undoLastLog()" style="margin-top: 10px;">🗑️ Remove Last Logged Day</button>
     </div>
 
@@ -221,7 +221,7 @@
   </div>
 
   <script>
-    // --- [NEW] PRESET MANAGEMENT STATE & LOGIC ---
+    // --- PRESET MANAGEMENT STATE & LOGIC ---
     let presets = JSON.parse(localStorage.getItem('workout_presets')) || [
       "Full Body Strength",
       "20m HIIT Shred"
@@ -239,7 +239,6 @@
       if (!container) return;
       container.innerHTML = '';
       
-      // Render removable preset badges
       presets.forEach((preset, index) => {
         const badge = document.createElement('div');
         badge.className = 'preset-badge';
@@ -250,7 +249,6 @@
         container.appendChild(badge);
       });
 
-      // Update dropdown options
       if (selectDropdown) {
         const currentSelection = selectDropdown.value;
         selectDropdown.innerHTML = '';
@@ -312,10 +310,9 @@
         timestamp: new Date().getTime()
       };
 
-      // Check if already logged today, update or add
       const existingIndex = logs.findIndex(l => l.date === today);
       if (existingIndex >= 0) {
-        logs[existingIndex] = workoutEntry; // update entry
+        logs[existingIndex] = workoutEntry;
       } else {
         logs.push(workoutEntry);
       }
@@ -325,7 +322,7 @@
       alert("Workout logged successfully!");
     }
 
-    // --- [NEW] UNDO / REMOVE LAST LOG LOGIC ---
+    // --- UNDO / REMOVE LAST LOG LOGIC ---
     function undoLastLog() {
       let logs = getStoredLogs();
       if (logs.length === 0) {
@@ -333,10 +330,9 @@
         return;
       }
 
-      // Sort by timestamp descending to find the absolute newest log
       logs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
       
-      const removed = logs.shift(); // Remove newest log
+      const removed = logs.shift();
       saveLogs(logs);
       updateTrackerUI();
       alert(`Successfully removed last logged entry (${removed.date} - ${removed.type})!`);
@@ -345,13 +341,11 @@
     function calculateStreak(logs) {
       if (logs.length === 0) return 0;
       
-      // Extract unique dates and sort descending
       const uniqueDates = [...new Set(logs.map(l => l.date))].sort((a, b) => new Date(b) - new Date(a));
       
       let streak = 0;
       let checkDate = new Date();
       
-      // Normalize to midnight string format
       const formatDate = (d) => d.toISOString().split('T')[0];
       
       let todayStr = formatDate(checkDate);
@@ -359,73 +353,11 @@
       yesterdayDate.setDate(checkDate.getDate() - 1);
       let yesterdayStr = formatDate(yesterdayDate);
 
-      // Check if user logged today or yesterday to keep streak alive
       if (!uniqueDates.includes(todayStr) && !uniqueDates.includes(yesterdayStr)) {
         return 0;
       }
 
-      // Start counting backwards from the most recent active date
       let currentDate = new Date(uniqueDates.includes(todayStr) ? todayStr : yesterdayStr);
       
       while (true) {
         let dateStr = formatDate(currentDate);
-        if (uniqueDates.includes(dateStr)) {
-          streak++;
-          currentDate.setDate(currentDate.getDate() - 1);
-        } else {
-          break;
-        }
-      }
-      
-      return streak;
-    }
-
-    function renderCalendar(logs) {
-      const grid = document.getElementById('calendarGrid');
-      grid.innerHTML = '';
-      
-      const loggedDates = logs.map(l => l.date);
-      
-      // Render last 28 days for the heatmap grid
-      for (let i = 27; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dateStr = d.toISOString().split('T')[0];
-        
-        const dayCell = document.createElement('div');
-        dayCell.className = 'calendar-day';
-        dayCell.textContent = d.getDate();
-        
-        if (loggedDates.includes(dateStr)) {
-          dayCell.classList.add('completed');
-          dayCell.title = `Completed workout on ${dateStr}`;
-        }
-        
-        grid.appendChild(dayCell);
-      }
-    }
-
-    function updateTrackerUI() {
-      const logs = getStoredLogs();
-      const streak = calculateStreak(logs);
-      
-      document.getElementById('streakCount').textContent = `${streak} Day${streak === 1 ? '' : 's'}`;
-      
-      const msgElem = document.getElementById('streakMessage');
-      if (streak > 0) {
-        msgElem.textContent = "You're on fire! Keep the momentum going.";
-      } else {
-        msgElem.textContent = "Log a workout today to start your streak!";
-      }
-
-      renderCalendar(logs);
-    }
-
-    // Initialize on page load
-    window.addEventListener('DOMContentLoaded', () => {
-      renderPresets();
-      updateTrackerUI();
-    });
-  </script>
-</body>
-</html>
