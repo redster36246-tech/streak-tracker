@@ -1,363 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Workout Streak Tracker</title>
-  <style>
-    :root {
-      --bg-color: #0f172a;
-      --card-bg: #1e293b;
-      --text-color: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #38bdf8;
-      --accent-hover: #0ea5e9;
-      --danger: #ef4444;
-      --success: #22c55e;
-      --border: #334155;
-    }
+    DATA MANAGEMENT / BACKUP & RESTORE
+           ========================================================================== */
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 500px;
-    }
-
-    h1, h2, h3 {
-      margin-top: 0;
-    }
-
-    .card {
-      background-color: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-
-    .streak-display {
-      text-align: center;
-    }
-
-    .streak-number {
-      font-size: 48px;
-      font-weight: bold;
-      color: var(--accent);
-      margin: 10px 0;
-    }
-
-    .btn {
-      background-color: var(--accent);
-      color: #0f172a;
-      border: none;
-      border-radius: 8px;
-      padding: 12px 20px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      width: 100%;
-      transition: background-color 0.2s;
-    }
-
-    .btn:hover {
-      background-color: var(--accent-hover);
-    }
-
-    .btn-danger {
-      background-color: var(--danger);
-      color: white;
-    }
-
-    .form-group {
-      margin-bottom: 15px;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-
-    input, select, textarea {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background-color: #0f172a;
-      color: var(--text-color);
-      box-sizing: border-box;
-      font-size: 14px;
-    }
-
-    textarea {
-      resize: vertical;
-      height: 80px;
-    }
-
-    /* Heatmap / Calendar */
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-      margin-top: 10px;
-    }
-
-    .calendar-day {
-      aspect-ratio: 1;
-      background-color: #0f172a;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .calendar-day.completed {
-      background-color: var(--success);
-      color: #0f172a;
-      font-weight: bold;
-      border-color: var(--success);
-    }
-
-    /* Preset Manager Badges */
-    .preset-badge {
-      background: #334155;
-      padding: 6px 12px;
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      border: 1px solid var(--border);
-    }
-
-    .preset-badge button {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 14px;
-    }
-    .preset-badge button:hover {
-      color: var(--danger);
-    }
-  </style>
-</head>
-<body>
-
-  <div class="container">
-    <h1>Workout Tracker</h1>
-
-    <!-- Streak Display Card -->
-    <div class="card streak-display">
-      <h3>Current Streak</h3>
-      <div class="streak-number" id="streakCount">0 Days</div>
-      <p id="streakMessage" style="color: var(--text-muted); margin: 0;">Keep pushing forward!</p>
-    </div>
-
-    <!-- Custom Presets Manager Card -->
-    <div class="card">
-      <h3>Manage Workout Presets</h3>
-      <div style="display: flex; gap: 10px; margin-bottom: 12px;">
-        <input type="text" id="newPresetInput" placeholder="New Preset (e.g. Upper Body)">
-        <button class="btn" onclick="addPreset()" style="width: auto; padding: 10px 16px;">Add</button>
-      </div>
-      <div id="presetListContainer" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
-    </div>
-
-    <!-- Log Workout Card -->
-    <div class="card">
-      <h3>Log Custom Workout</h3>
-      <div class="form-group">
-        <label for="workoutTypeSelect">Workout Type / Name</label>
-        <select id="workoutTypeSelect">
-          <!-- Dynamically populated from presets -->
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="durationInput">Duration (minutes)</label>
-        <input type="number" id="durationInput" value="30">
-      </div>
-      <div class="form-group">
-        <label for="intensitySelect">Intensity</label>
-        <select id="intensitySelect">
-          <option value="Low">Low</option>
-          <option value="Medium" selected>Medium</option>
-          <option value="High">High</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="notesInput">Notes / Exercises (Sets, Reps, Weights)</label>
-        <textarea id="notesInput" placeholder="e.g. Bench press 3x10 @ 115lbs"></textarea>
-      </div>
-      <button class="btn" onclick="logWorkoutToday()">Log Workout for Today</button>
-      
-      <!-- Undo / Remove Last Log Button -->
-      <button class="btn btn-danger" onclick="undoLastLog()" style="margin-top: 10px;">🗑️ Remove Last Logged Day</button>
-    </div>
-
-    <!-- Calendar Heatmap Card -->
-    <div class="card">
-      <h3>Recent Activity Heatmap</h3>
-      <div id="calendarGrid" class="calendar-grid">
-        <!-- Generated via JS -->
-      </div>
-    </div>
-
-  </div>
-
-  <script>
-    // --- PRESET MANAGEMENT STATE & LOGIC ---
-    let presets = JSON.parse(localStorage.getItem('workout_presets')) || [
-      "Full Body Strength",
-      "20m HIIT Shred"
-    ];
-
-    function savePresets() {
-      localStorage.setItem('workout_presets', JSON.stringify(presets));
-      renderPresets();
-    }
-
-    function renderPresets() {
-      const container = document.getElementById('presetListContainer');
-      const selectDropdown = document.getElementById('workoutTypeSelect');
-      
-      if (!container) return;
-      container.innerHTML = '';
-      
-      presets.forEach((preset, index) => {
-        const badge = document.createElement('div');
-        badge.className = 'preset-badge';
-        badge.innerHTML = `
-          <span>${preset}</span>
-          <button onclick="removePreset(${index})" title="Delete preset">&times;</button>
-        `;
-        container.appendChild(badge);
-      });
-
-      if (selectDropdown) {
-        const currentSelection = selectDropdown.value;
-        selectDropdown.innerHTML = '';
-        presets.forEach(preset => {
-          const opt = document.createElement('option');
-          opt.value = preset;
-          opt.textContent = preset;
-          selectDropdown.appendChild(opt);
-        });
-        if (presets.includes(currentSelection)) {
-          selectDropdown.value = currentSelection;
+        function exportJSONBackup() {
+            const jsonStr = JSON.stringify(appData, null, 2);
+            const blob = new Blob([jsonStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `FitStreak_Backup_${getTodayKey()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
         }
-      }
-    }
 
-    function addPreset() {
-      const input = document.getElementById('newPresetInput');
-      const val = input.value.trim();
-      if (val && !presets.includes(val)) {
-        presets.push(val);
-        input.value = '';
-        savePresets();
-      }
-    }
+        function importJSONBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-    function removePreset(index) {
-      if (presets.length <= 1) {
-        alert("You must keep at least one workout preset!");
-        return;
-      }
-      presets.splice(index, 1);
-      savePresets();
-    }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed && Array.isArray(parsed.workouts)) {
+                        appData = parsed;
+                        recalculateStreak();
+                        renderAllViews();
+                        alert("Your data backup has been successfully restored!");
+                    } else {
+                        alert("Invalid file format.");
+                    }
+                } catch (err) {
+                    alert("Error reading backup file.");
+                }
+            };
+            reader.readAsText(file);
+        }
 
-    // --- CORE TRACKER LOGIC ---
-    function getTodayString() {
-      const d = new Date();
-      return d.toISOString().split('T')[0];
-    }
-
-    function getStoredLogs() {
-      return JSON.parse(localStorage.getItem('workout_logs')) || [];
-    }
-
-    function saveLogs(logs) {
-      localStorage.setItem('workout_logs', JSON.stringify(logs));
-    }
-
-    function logWorkoutToday() {
-      const logs = getStoredLogs();
-      const today = getTodayString();
-      
-      const workoutEntry = {
-        date: today,
-        type: document.getElementById('workoutTypeSelect').value,
-        duration: document.getElementById('durationInput').value,
-        intensity: document.getElementById('intensitySelect').value,
-        notes: document.getElementById('notesInput').value,
-        timestamp: new Date().getTime()
-      };
-
-      const existingIndex = logs.findIndex(l => l.date === today);
-      if (existingIndex >= 0) {
-        logs[existingIndex] = workoutEntry;
-      } else {
-        logs.push(workoutEntry);
-      }
-
-      saveLogs(logs);
-      updateTrackerUI();
-      alert("Workout logged successfully!");
-    }
-
-    // --- UNDO / REMOVE LAST LOG LOGIC ---
-    function undoLastLog() {
-      let logs = getStoredLogs();
-      if (logs.length === 0) {
-        alert("No workout logs found to remove.");
-        return;
-      }
-
-      logs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      
-      const removed = logs.shift();
-      saveLogs(logs);
-      updateTrackerUI();
-      alert(`Successfully removed last logged entry (${removed.date} - ${removed.type})!`);
-    }
-
-    function calculateStreak(logs) {
-      if (logs.length === 0) return 0;
-      
-      const uniqueDates = [...new Set(logs.map(l => l.date))].sort((a, b) => new Date(b) - new Date(a));
-      
-      let streak = 0;
-      let checkDate = new Date();
-      
-      const formatDate = (d) => d.toISOString().split('T')[0];
-      
-      let todayStr = formatDate(checkDate);
-      let yesterdayDate = new Date();
-      yesterdayDate.setDate(checkDate.getDate() - 1);
-      let yesterdayStr = formatDate(yesterdayDate);
-
-      if (!uniqueDates.includes(todayStr) && !uniqueDates.includes(yesterdayStr)) {
-        return 0;
-      }
-
-      let currentDate = new Date(uniqueDates.includes(todayStr) ? todayStr : yesterdayStr);
-      
-      while (true) {
-        let dateStr = formatDate(currentDate);
+        function confirmResetAllData() {
+            if (confirm("Are you sure you want to reset all personal records and clear workout history memory?")) {
+                appData = {
+                    profile: { name: "Alex", weeklyGoalDays: 5, dailyTargetMins: 45 },
+                    workouts: [],
+                    currentStreak: 0,
+                    longestStreak: 0
+                };
+                saveMemory();
+                renderAllViews();
+            }
+        }
+    </script>
+</body>
+</html>
