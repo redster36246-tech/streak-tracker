@@ -82,6 +82,25 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
+        /* Consistent dark dropdown styling (including native option menus). */
+        select.custom-select {
+            color-scheme: dark;
+            appearance: none;
+            -webkit-appearance: none;
+            background-color: rgba(0, 0, 0, 0.40);
+            color: #F1F5F9;
+            padding-right: 2.25rem;
+        }
+        select.custom-select option {
+            background-color: #121A29;
+            color: #F1F5F9;
+        }
+        select.custom-select:focus {
+            outline: none;
+            border-color: #FF6D00;
+            box-shadow: 0 0 0 2px rgba(255, 109, 0, 0.15);
+        }
+
         /* Heatmap Day Zoom */
         .heatmap-cell {
             transition: transform 0.15s ease;
@@ -237,7 +256,10 @@
                     </div>
                 </div>
 
-                <div class="mt-4 pt-3 border-t border-brand-cardBorder/80">
+                <div class="mt-4 pt-3 border-t border-brand-cardBorder/80 space-y-2">
+                    <button onclick="createWorkoutPreset()" class="w-full py-2.5 text-xs font-bold text-brand-orange hover:text-white bg-brand-cardBg hover:bg-brand-orange/20 rounded-xl border border-brand-cardBorder hover:border-brand-orange/40 transition text-center block">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> Create Preset
+                    </button>
                     <button onclick="openLogModal()" class="w-full py-2.5 text-xs font-bold text-gray-300 hover:text-white bg-brand-cardBg hover:bg-brand-cardBorder rounded-xl border border-brand-cardBorder transition text-center block">
                         <i class="fa-solid fa-pen-to-square mr-1.5"></i> Custom Detailed Session
                     </button>
@@ -460,13 +482,13 @@
                 </div>
             </div>
 
-            <form id="workoutForm" onsubmit="saveWorkoutForm(event)" class="space-y-4">
+            <form id="workoutForm" novalidate onsubmit="saveWorkoutForm(event)" class="space-y-4">
                 <input type="hidden" id="editingLogId" value="">
 
-                <!-- Date -->
-                <div>
+                <!-- Date (hidden while creating a reusable preset) -->
+                <div id="formDateField">
                     <label class="block text-xs font-semibold text-gray-300 mb-1">Date</label>
-                    <input type="date" id="formDate" required class="w-full bg-black/40 border border-brand-cardBorder rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange">
+                    <input type="date" id="formDate" class="w-full bg-black/40 border border-brand-cardBorder rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange">
                 </div>
 
                 <!-- Title -->
@@ -504,12 +526,15 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">Intensity</label>
-                        <select id="formIntensity" class="w-full bg-black/40 border border-brand-cardBorder rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange cursor-pointer">
-                            <option value="Low">Low Effort 😊</option>
-                            <option value="Moderate" selected>Moderate Effort 💪</option>
-                            <option value="High">High Effort / Hard ⚡</option>
-                        </select>
+                        <label for="formIntensity" class="block text-xs font-semibold text-gray-300 mb-1">Intensity</label>
+                        <div class="relative">
+                            <select id="formIntensity" class="custom-select w-full border border-brand-cardBorder rounded-xl px-3.5 py-2.5 text-xs cursor-pointer">
+                                <option value="Low">Low Effort 😊</option>
+                                <option value="Moderate" selected>Moderate Effort 💪</option>
+                                <option value="High">High Effort / Hard ⚡</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 pointer-events-none"></i>
+                        </div>
                     </div>
                 </div>
 
@@ -519,11 +544,24 @@
                     <textarea id="formNotes" rows="3" placeholder="e.g. Bench Press 4x8 @ 80kg, Dumbbell Rows, Tricep pushdowns..." class="w-full bg-black/40 border border-brand-cardBorder rounded-xl p-3 text-xs text-white focus:outline-none focus:border-brand-orange resize-none"></textarea>
                 </div>
 
+                <div id="removeLogDaysSection" class="rounded-xl border border-red-500/20 bg-red-500/5 p-3 space-y-2">
+                    <button type="button" onclick="toggleRemoveLogDays()" class="py-2 px-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 hover:text-white text-xs font-bold transition">
+                        <i class="fa-solid fa-calendar-xmark mr-1.5"></i> Remove Log Day
+                    </button>
+                    <div id="removeLogDaysPanel" class="hidden rounded-xl border border-brand-cardBorder bg-black/20 p-3">
+                        <p class="text-xs text-gray-400 mb-2">Select a logged date to clear all workouts and rest-day logs for that day.</p>
+                        <div id="removeLogDaysList" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+
+                <button id="removePresetButton" type="button" onclick="removeEditingPreset()" class="hidden w-full py-2.5 rounded-xl border border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20 hover:text-white text-xs font-bold transition">
+                    <i class="fa-solid fa-trash mr-1.5"></i> Remove Preset
+                </button>
                 <div class="pt-3 flex gap-3">
                     <button type="button" onclick="closeLogModal()" class="w-1/2 py-2.5 rounded-xl border border-brand-cardBorder text-gray-300 hover:text-white hover:bg-brand-cardBorder text-xs font-bold transition">
                         Cancel
                     </button>
-                    <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-gradient-to-r from-brand-orange to-brand-fire text-white text-xs font-bold transition shadow-lg shadow-brand-fire/20">
+                    <button id="workoutFormSubmit" type="button" onclick="saveWorkoutForm(event)" class="w-1/2 py-2.5 rounded-xl bg-gradient-to-r from-brand-orange to-brand-fire text-white text-xs font-bold transition shadow-lg shadow-brand-fire/20">
                         Save Log
                     </button>
                 </div>
@@ -612,6 +650,7 @@
            ========================================================================== */
 
         const STORAGE_KEY = 'FITSTREAK_PERSONAL_APP_V2';
+        const CUSTOM_PRESETS_STORAGE_KEY = 'FITSTREAK_CUSTOM_PRESETS_V1';
 
         let appData = {
             profile: {
@@ -621,11 +660,16 @@
             },
             workouts: [], // { id, date: 'YYYY-MM-DD', title, category, duration, calories, intensity, notes, isRestDay }
             currentStreak: 0,
-            longestStreak: 0
+            longestStreak: 0,
+            customPresets: []
         };
 
         // Heatmap navigation date state
         let heatmapViewDate = new Date();
+
+        // Preset creation mode: save the workout form as a reusable preset instead of a log.
+        let creatingPreset = false;
+        let editingPresetId = null;
 
         // Default Presets
         const DEFAULT_PRESETS = [
@@ -673,7 +717,23 @@
             try {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
-                    appData = JSON.parse(stored);
+                    const parsed = JSON.parse(stored);
+                    appData = {
+                        profile: { name: "Alex", weeklyGoalDays: 5, dailyTargetMins: 45 },
+                        workouts: [],
+                        currentStreak: 0,
+                        longestStreak: 0,
+                        customPresets: [],
+                        ...parsed,
+                        customPresets: Array.isArray(parsed.customPresets) ? parsed.customPresets : []
+                    };
+                    if (!Array.isArray(appData.workouts)) appData.workouts = [];
+                    // Recover custom presets from their dedicated key if the main app data is older.
+                    try {
+                        const separatelySavedPresets = JSON.parse(localStorage.getItem(CUSTOM_PRESETS_STORAGE_KEY) || 'null');
+                        if (Array.isArray(separatelySavedPresets) && separatelySavedPresets.length > 0 && (!Array.isArray(appData.customPresets) || appData.customPresets.length === 0)) appData.customPresets = separatelySavedPresets;
+                    } catch (_) {}
+                    saveMemory();
                 } else {
                     seedSampleMemory();
                 }
@@ -685,9 +745,13 @@
 
         function saveMemory() {
             try {
+                if (!Array.isArray(appData.customPresets)) appData.customPresets = [];
+                localStorage.setItem(CUSTOM_PRESETS_STORAGE_KEY, JSON.stringify(appData.customPresets));
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+                return true;
             } catch (e) {
                 console.error("Failed to save memory:", e);
+                return false;
             }
         }
 
@@ -729,7 +793,8 @@
                     }
                 ],
                 currentStreak: 2,
-                longestStreak: 2
+                longestStreak: 2,
+                customPresets: []
             };
             saveMemory();
         }
@@ -854,26 +919,74 @@
 
         function renderPresets() {
             const container = document.getElementById('presetsContainer');
+            if (!container) return;
             container.innerHTML = '';
 
-            DEFAULT_PRESETS.forEach(p => {
-                const btn = document.createElement('button');
-                btn.onclick = () => logPresetWorkout(p);
-                btn.className = "w-full text-left p-3 rounded-2xl bg-black/30 hover:bg-brand-cardBorder/60 border border-brand-cardBorder hover:border-brand-orange/40 transition group flex items-center justify-between";
+            const customPresets = Array.isArray(appData.customPresets) ? appData.customPresets : [];
+            // Normalize older custom presets so every saved custom item has an editable ID.
+            let normalizedIds = false;
+            customPresets.forEach((preset) => {
+                if (!preset.id) {
+                    preset.id = 'preset_legacy_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+                    normalizedIds = true;
+                }
+                preset.isCustom = true;
+            });
+            if (normalizedIds) saveMemory();
+            // Custom presets are deliberately rendered first, above the built-in presets.
+            const allPresets = [...customPresets, ...DEFAULT_PRESETS];
+            allPresets.forEach((p) => {
+                const row = document.createElement('div');
+                row.className = 'flex items-stretch gap-2 group';
 
-                btn.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-xl bg-brand-orange/10 text-brand-orange flex items-center justify-center text-xs font-bold group-hover:scale-110 transition-transform">
-                            <i class="fa-solid ${p.icon}"></i>
-                        </div>
-                        <div>
-                            <h4 class="text-xs font-bold text-white group-hover:text-brand-orange transition">${p.title}</h4>
-                            <p class="text-[10px] text-gray-400">${p.duration} mins • ${p.calories} kcal</p>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-xs text-gray-500 group-hover:text-white transition"></i>
-                `;
-                container.appendChild(btn);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = "flex-1 min-w-0 text-left p-3 rounded-2xl bg-black/30 hover:bg-brand-cardBorder/60 border border-brand-cardBorder hover:border-brand-orange/40 transition group/preset flex items-center justify-between";
+                btn.addEventListener('click', () => logPresetWorkout(p));
+
+                const left = document.createElement('div');
+                left.className = 'flex items-center gap-3 min-w-0';
+                const iconBox = document.createElement('div');
+                iconBox.className = 'w-8 h-8 shrink-0 rounded-xl bg-brand-orange/10 text-brand-orange flex items-center justify-center text-xs font-bold group-hover:scale-110 transition-transform';
+                const icon = document.createElement('i');
+                icon.className = `fa-solid ${p.icon || 'fa-dumbbell'}`;
+                iconBox.appendChild(icon);
+
+                const details = document.createElement('div');
+                details.className = 'min-w-0';
+                const title = document.createElement('h4');
+                title.className = 'text-xs font-bold text-white group-hover:text-brand-orange transition break-words';
+                title.textContent = p.title || 'Custom Workout';
+                const meta = document.createElement('p');
+                meta.className = 'text-[10px] text-gray-400';
+                meta.textContent = `${Number(p.duration) || 0} mins • ${Number(p.calories) || 0} kcal`;
+                details.append(title, meta);
+                left.append(iconBox, details);
+
+                const arrow = document.createElement('i');
+                arrow.className = 'fa-solid fa-chevron-right text-xs text-gray-500 group-hover:text-white transition ml-3 shrink-0';
+                btn.append(left, arrow);
+                row.appendChild(btn);
+
+                // Custom presets get a pencil control that appears on hover (and keyboard focus).
+                if (p.isCustom || (p.id && String(p.id).startsWith('preset_'))) {
+                    const actions = document.createElement('div');
+                    actions.className = 'flex items-center gap-1';
+                    const editBtn = document.createElement('button');
+                    editBtn.type = 'button';
+                    editBtn.title = 'Edit or delete preset';
+                    editBtn.setAttribute('aria-label', `Customize ${p.title || 'preset'}`);
+                    editBtn.className = 'w-10 h-full min-h-[44px] rounded-xl border border-brand-orange/40 bg-brand-orange/10 text-brand-orange hover:bg-brand-orange/20 hover:border-brand-orange transition opacity-100 flex items-center justify-center shrink-0';
+                    editBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>';
+                    editBtn.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openCustomizePreset(p.id);
+                    });
+                    actions.appendChild(editBtn);
+                    row.appendChild(actions);
+                }
+                container.appendChild(row);
             });
         }
 
@@ -1102,9 +1215,16 @@
            ========================================================================== */
 
         function openLogModal() {
+            creatingPreset = false;
+            editingPresetId = null;
+            document.getElementById('workoutFormSubmit').textContent = 'Save Log';
+            document.getElementById('removePresetButton')?.classList.add('hidden');
             document.getElementById('editingLogId').value = '';
-            document.getElementById('logModalTitle').innerText = 'Log Workout Session';
-            document.getElementById('formDate').value = getTodayKey();
+            document.getElementById('logModalTitle').textContent = 'Log Workout Session';
+            document.getElementById('formDateField').classList.remove('hidden');
+            document.getElementById('removeLogDaysSection')?.classList.remove('hidden');
+            document.getElementById('formTitle').placeholder = 'e.g. Upper Body Hypertrophy';
+            document.getElementById('formNotes').placeholder = 'e.g. Bench Press 4x8, Dumbbell Rows...';
             document.getElementById('workoutForm').reset();
             document.getElementById('formDate').value = getTodayKey();
 
@@ -1122,59 +1242,116 @@
             const modal = document.getElementById('logModal');
             modal.classList.add('opacity-0');
             setTimeout(() => modal.classList.add('hidden'), 300);
+            // Leave the form ready for a normal log next time.
+            creatingPreset = false;
+            document.getElementById('formDateField').classList.remove('hidden');
+            document.getElementById('removeLogDaysSection')?.classList.remove('hidden');
+            const removePanel = document.getElementById('removeLogDaysPanel');
+            if (removePanel) removePanel.classList.add('hidden');
         }
 
         function saveWorkoutForm(e) {
-            e.preventDefault();
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
 
             const editId = document.getElementById('editingLogId').value;
             const date = document.getElementById('formDate').value;
             const title = document.getElementById('formTitle').value.trim();
             const category = document.getElementById('formCategory').value;
-            const duration = parseInt(document.getElementById('formDuration').value) || 30;
-            const calories = parseInt(document.getElementById('formCalories').value) || 0;
+            const duration = Number.parseInt(document.getElementById('formDuration').value, 10);
+            const caloriesValue = document.getElementById('formCalories').value;
+            const calories = caloriesValue === '' ? 0 : Number.parseInt(caloriesValue, 10);
             const intensity = document.getElementById('formIntensity').value;
             const notes = document.getElementById('formNotes').value.trim();
 
-            if (editId) {
-                // Update existing
-                const index = appData.workouts.findIndex(w => w.id === editId);
-                if (index !== -1) {
-                    appData.workouts[index] = {
-                        ...appData.workouts[index],
-                        date,
-                        title,
-                        category,
-                        duration,
-                        calories,
-                        intensity,
-                        notes,
-                        isRestDay: false
-                    };
-                }
-            } else {
-                // Add new
-                const newLog = {
-                    id: 'log_' + Date.now(),
-                    date,
+            if (!title) {
+                alert(creatingPreset ? 'Enter a name for this preset.' : 'Enter a workout title.');
+                document.getElementById('formTitle').focus();
+                return;
+            }
+            if (!Number.isFinite(duration) || duration < 1 || duration > 600) {
+                alert('Enter a workout duration from 1 to 600 minutes.');
+                document.getElementById('formDuration').focus();
+                return;
+            }
+            if (!Number.isFinite(calories) || calories < 0) {
+                alert('Enter a valid non-negative calorie estimate.');
+                document.getElementById('formCalories').focus();
+                return;
+            }
+
+            if (!creatingPreset && !date) {
+                alert('Choose a date for this workout.');
+                document.getElementById('formDate').focus();
+                return;
+            }
+
+            if (creatingPreset) {
+                if (!Array.isArray(appData.customPresets)) appData.customPresets = [];
+                const preset = {
+                    id: 'preset_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
                     title,
                     category,
                     duration,
                     calories,
                     intensity,
                     notes,
-                    isRestDay: false
+                    icon: category === 'Running' ? 'fa-person-running' : category === 'Yoga' ? 'fa-spa' : category === 'Cycling' ? 'fa-bicycle' : category === 'HIIT' ? 'fa-fire-burner' : category === 'Cardio' ? 'fa-heart-pulse' : 'fa-dumbbell',
+                    color: 'orange',
+                    isCustom: true
                 };
-                appData.workouts.push(newLog);
+
+                // Update an existing custom preset or add a new one to the same array the menu renders.
+                const wasEditingPreset = Boolean(editingPresetId);
+                if (editingPresetId) {
+                    const existingIndex = appData.customPresets.findIndex(item => item.id === editingPresetId);
+                    if (existingIndex !== -1) {
+                        preset.id = editingPresetId;
+                        appData.customPresets[existingIndex] = { ...appData.customPresets[existingIndex], ...preset };
+                    } else {
+                        appData.customPresets.unshift(preset);
+                    }
+                } else {
+                    appData.customPresets.unshift(preset);
+                }
+                const saved = saveMemory();
+                renderPresets();
+
+                // Reset the form mode only after saving and rendering the preset.
+                editingPresetId = null;
+                creatingPreset = false;
+                document.getElementById('formDateField').classList.remove('hidden');
+                document.getElementById('removeLogDaysSection')?.classList.remove('hidden');
+                document.getElementById('workoutFormSubmit').textContent = 'Save Log';
+                document.getElementById('logModalTitle').textContent = 'Log Workout Session';
+                document.getElementById('formTitle').placeholder = 'e.g. Upper Body Hypertrophy';
+                document.getElementById('formNotes').placeholder = 'e.g. Bench Press 4x8, Dumbbell Rows...';
+                document.getElementById('workoutForm').reset();
+                closeLogModal();
+
+                if (!saved) {
+                    alert('The preset was added to Quick Preset Workouts for this session, but this browser blocked saving it permanently. Try opening this HTML file in Chrome or Edge.');
+                } else {
+                    alert((wasEditingPreset ? 'Preset updated.' : 'Preset saved.') + ' Quick Preset Workouts has been refreshed.');
+                }
+                return;
+            }
+
+            if (editId) {
+                const index = appData.workouts.findIndex(w => w.id === editId);
+                if (index !== -1) {
+                    appData.workouts[index] = { ...appData.workouts[index], date, title, category, duration, calories, intensity, notes, isRestDay: false };
+                }
+            } else {
+                appData.workouts.push({
+                    id: 'log_' + Date.now(), date, title, category, duration, calories, intensity, notes, isRestDay: false
+                });
             }
 
             recalculateStreak();
+            saveMemory();
             renderAllViews();
             closeLogModal();
-
-            if (date === getTodayKey()) {
-                triggerCelebration("Awesome job completing today's workout!");
-            }
+            if (date === getTodayKey()) triggerCelebration("Awesome job completing today's workout!");
         }
 
         function quickMarkTodayComplete() {
@@ -1245,11 +1422,12 @@
                 duration: preset.duration,
                 calories: preset.calories,
                 intensity: preset.intensity,
-                notes: `Logged via Quick Preset: ${preset.title}`,
+                notes: preset.notes ? `${preset.notes}\nLogged via Quick Preset: ${preset.title}` : `Logged via Quick Preset: ${preset.title}`,
                 isRestDay: false
             });
 
             recalculateStreak();
+            saveMemory();
             renderAllViews();
             triggerCelebration(`Logged ${preset.title}!`);
         }
@@ -1386,11 +1564,160 @@
                     profile: { name: "Alex", weeklyGoalDays: 5, dailyTargetMins: 45 },
                     workouts: [],
                     currentStreak: 0,
-                    longestStreak: 0
+                    longestStreak: 0,
+                    customPresets: []
                 };
                 saveMemory();
                 renderAllViews();
             }
+        }
+
+
+        // Remove all entries for a selected date so that day returns to an unlogged state.
+        function toggleRemoveLogDays() {
+            const panel = document.getElementById('removeLogDaysPanel');
+            const list = document.getElementById('removeLogDaysList');
+            if (!panel || !list) return;
+
+            if (!panel.classList.contains('hidden')) {
+                panel.classList.add('hidden');
+                return;
+            }
+
+            list.innerHTML = '';
+            const dates = [...new Set((appData.workouts || []).map(w => w.date).filter(Boolean))]
+                .sort((a, b) => b.localeCompare(a));
+
+            if (dates.length === 0) {
+                list.innerHTML = '<p class="text-xs text-gray-500">There are no logged days to reset.</p>';
+            } else {
+                dates.forEach(date => {
+                    const count = appData.workouts.filter(w => w.date === date).length;
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200 hover:bg-red-500/20 transition';
+                    button.textContent = `${date} (${count} log${count === 1 ? '' : 's'})`;
+                    button.onclick = () => removeSelectedLogDay(date);
+                    list.appendChild(button);
+                });
+            }
+            panel.classList.remove('hidden');
+        }
+
+        function removeSelectedLogDay(date) {
+            const before = appData.workouts.length;
+            appData.workouts = (appData.workouts || []).filter(w => w.date !== date);
+            const removed = before - appData.workouts.length;
+            if (removed === 0) {
+                toggleRemoveLogDaysRefresh();
+                return;
+            }
+            recalculateStreak();
+            saveMemory();
+            renderAllViews();
+            const panel = document.getElementById('removeLogDaysPanel');
+            const list = document.getElementById('removeLogDaysList');
+            if (panel && list) {
+                // Rebuild the date choices so the removed date disappears immediately.
+                list.innerHTML = '';
+                const remainingDates = [...new Set((appData.workouts || []).map(w => w.date).filter(Boolean))]
+                    .sort((a, b) => b.localeCompare(a));
+                if (remainingDates.length === 0) {
+                    list.innerHTML = '<p class="text-xs text-gray-500">There are no logged days to reset.</p>';
+                } else {
+                    remainingDates.forEach(remainingDate => {
+                        const count = appData.workouts.filter(w => w.date === remainingDate).length;
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200 hover:bg-red-500/20 transition';
+                        button.textContent = `${remainingDate} (${count} log${count === 1 ? '' : 's'})`;
+                        button.onclick = () => removeSelectedLogDay(remainingDate);
+                        list.appendChild(button);
+                    });
+                }
+            }
+            alert(`${date} reset to not done. Removed ${removed} log entr${removed === 1 ? 'y' : 'ies'}.`);
+        }
+
+        function toggleRemoveLogDaysRefresh() {
+            const list = document.getElementById('removeLogDaysList');
+            if (list) list.innerHTML = '<p class="text-xs text-gray-500">There are no logged days to reset.</p>';
+        }
+
+        function openCustomizePreset(presetId) {
+            const preset = (Array.isArray(appData.customPresets) ? appData.customPresets : []).find(item => item.id === presetId);
+            if (!preset) {
+                alert('Could not find this custom preset. Try refreshing the page.');
+                return;
+            }
+
+            // Clicking the pencil now opens the edit form directly instead of relying on
+            // browser prompt dialogs, which some browsers/file previews block.
+            openLogModal();
+            creatingPreset = true;
+            editingPresetId = presetId;
+            document.getElementById('editingLogId').value = '';
+            document.getElementById('logModalTitle').textContent = 'Edit Workout Preset';
+            document.getElementById('formDateField').classList.add('hidden');
+            document.getElementById('removeLogDaysSection')?.classList.add('hidden');
+            document.getElementById('workoutFormSubmit').textContent = 'Save Preset Changes';
+            document.getElementById('removePresetButton')?.classList.remove('hidden');
+            document.getElementById('formTitle').value = preset.title || '';
+            document.getElementById('formCategory').value = preset.category || 'Strength';
+            document.getElementById('formDuration').value = preset.duration || 30;
+            document.getElementById('formCalories').value = preset.calories ?? '';
+            document.getElementById('formIntensity').value = preset.intensity || 'Moderate';
+            document.getElementById('formNotes').value = preset.notes || '';
+            document.getElementById('formNotes').placeholder = 'Exercises and notes to include with this preset...';
+        }
+
+        function removeEditingPreset() {
+            // Delete immediately: browser preview environments can block confirm()/alert() dialogs.
+            const presetIdToRemove = editingPresetId;
+            if (!presetIdToRemove || !Array.isArray(appData.customPresets)) return;
+
+            const beforeCount = appData.customPresets.length;
+            appData.customPresets = appData.customPresets.filter(item => String(item.id) !== String(presetIdToRemove));
+            if (appData.customPresets.length === beforeCount) {
+                const title = document.getElementById('logModalTitle');
+                if (title) title.textContent = 'Preset could not be found';
+                return;
+            }
+
+            // Persist the updated custom preset list, refresh Quick Preset Workouts,
+            // and close the editor. Logged workout history is deliberately unchanged.
+            const saved = saveMemory();
+            renderPresets();
+            editingPresetId = null;
+            creatingPreset = false;
+            document.getElementById('removePresetButton')?.classList.add('hidden');
+            closeLogModal();
+
+            if (!saved) {
+                alert('The preset was removed for this session, but browser storage could not save the change. Open this file in Chrome or Edge and try again.');
+            }
+        }
+
+        // Open the same detailed form used for logging a workout, but save its values as a reusable preset.
+        function createWorkoutPreset() {
+            openLogModal();
+            // Set mode after openLogModal resets the form state.
+            creatingPreset = true;
+            editingPresetId = null;
+            document.getElementById('editingLogId').value = '';
+            document.getElementById('logModalTitle').textContent = 'Create Workout Preset';
+            document.getElementById('formDateField').classList.add('hidden');
+            document.getElementById('removeLogDaysSection')?.classList.add('hidden');
+            document.getElementById('workoutFormSubmit').textContent = 'Save Preset';
+            document.getElementById('removePresetButton')?.classList.add('hidden');
+            document.getElementById('formTitle').value = '';
+            document.getElementById('formTitle').placeholder = 'e.g. My Core Workout';
+            document.getElementById('formNotes').value = '';
+            document.getElementById('formNotes').placeholder = 'Exercises and notes to include with this preset...';
+            document.getElementById('formDuration').value = '30';
+            document.getElementById('formCalories').value = '';
+            document.getElementById('formCategory').value = 'Strength';
+            document.getElementById('formIntensity').value = 'Moderate';
         }
     </script>
 </body>
