@@ -26,10 +26,6 @@
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif']
-                        <!-- [NEW] Undo / Remove Last Log Button -->
-<button onclick="undoLastLog()" class="w-full mt-2 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-bold transition flex items-center justify-center gap-2">
-    <i class="fa-solid fa-trash-can"></i> Remove Last Logged Day
-</button>
                     }
                 }
             }
@@ -1346,24 +1342,7 @@
         /* ==========================================================================
            DATA MANAGEMENT / BACKUP & RESTORE
            ========================================================================== */
-// --- [NEW] UNDO LAST LOG FUNCTION FOR FITSTREAK ---
-        function undoLastLog() {
-            if (!appData.workouts || appData.workouts.length === 0) {
-                alert("No workout logs found to remove.");
-                return;
-            }
 
-            // Sort by date descending to get the most recent log
-            appData.workouts.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            const removed = appData.workouts.shift(); // Remove newest log
-            saveMemory(); // Saves back to appData in localStorage
-            recalculateStreak(); // Recalculates streak from appData.workouts
-            renderAllViews(); // Updates your UI, streak counter, and heatmap
-            
-            alert(`Successfully removed last logged entry (${removed.title || removed.date})!`);
-        }
-        
         function exportJSONBackup() {
             const jsonStr = JSON.stringify(appData, null, 2);
             const blob = new Blob([jsonStr], { type: "application/json" });
