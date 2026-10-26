@@ -1,1397 +1,431 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Personal FitStreak Tracker</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            fire: '#FF3D00',
-                            orange: '#FF6D00',
-                            accent: '#FFAB00',
-                            neon: '#00E676',
-                            cyan: '#00B0FF',
-                            purple: '#D500F9',
-                            darkBg: '#090D16',
-                            cardBg: '#121A29',
-                            cardBorder: '#1E293B'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Google Fonts & FontAwesome -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Canvas Confetti Library -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout Streak Tracker</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --text-color: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --border: #334155;
+    }
 
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #090D16;
-            color: #F1F5F9;
-        }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #090D16;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #1E293B;
-            border-radius: 9999px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #FF6D00;
-        }
+    .container {
+      width: 100%;
+      max-width: 500px;
+    }
 
-        /* Flame Glow Animation */
-        @keyframes flameGlow {
-            0%, 100% {
-                transform: scale(1);
-                filter: drop-shadow(0 0 16px rgba(255, 61, 0, 0.75));
-            }
-            50% {
-                transform: scale(1.08);
-                filter: drop-shadow(0 0 28px rgba(255, 109, 0, 0.95));
-            }
-        }
+    h1, h2, h3 {
+      margin-top: 0;
+    }
 
-        .animate-flame {
-            animation: flameGlow 2.2s infinite ease-in-out;
-        }
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
 
-        .glass-card {
-            background: rgba(18, 26, 41, 0.85);
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
+    .streak-display {
+      text-align: center;
+    }
 
-        /* Heatmap Day Zoom */
-        .heatmap-cell {
-            transition: transform 0.15s ease;
-        }
-        .heatmap-cell:hover {
-            transform: scale(1.2);
-            z-index: 20;
-        }
-    </style>
+    .streak-number {
+      font-size: 48px;
+      font-weight: bold;
+      color: var(--accent);
+      margin: 10px 0;
+    }
+
+    .btn {
+      background-color: var(--accent);
+      color: #0f172a;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      transition: background-color 0.2s;
+    }
+
+    .btn:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .btn-danger {
+      background-color: var(--danger);
+      color: white;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background-color: #0f172a;
+      color: var(--text-color);
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+
+    textarea {
+      resize: vertical;
+      height: 80px;
+    }
+
+    /* Heatmap / Calendar */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .calendar-day {
+      aspect-ratio: 1;
+      background-color: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .calendar-day.completed {
+      background-color: var(--success);
+      color: #0f172a;
+      font-weight: bold;
+      border-color: var(--success);
+    }
+
+    /* Preset Manager Badges */
+    .preset-badge {
+      background: #334155;
+      padding: 6px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+    }
+
+    .preset-badge button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .preset-badge button:hover {
+      color: var(--danger);
+    }
+  </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between selection:bg-brand-orange selection:text-white pb-12">
+<body>
 
-    <!-- Header Navigation -->
-    <header class="sticky top-0 z-30 glass-card border-b border-brand-cardBorder px-4 lg:px-8 py-3.5">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-fire via-brand-orange to-brand-accent flex items-center justify-center shadow-lg shadow-brand-fire/20">
-                    <i class="fa-solid fa-fire text-white text-xl"></i>
-                </div>
-                <div>
-                    <h1 class="font-black text-xl tracking-wider text-white flex items-center gap-2">
-                        <span id="navUserName">My</span><span class="text-brand-orange">FitStreak</span>
-                    </h1>
-                    <p class="text-[10px] text-gray-400 font-semibold tracking-wider uppercase -mt-0.5">PERSONAL WORKOUT MEMORY</p>
-                </div>
-            </div>
+  <div class="container">
+    <h1>Workout Tracker</h1>
 
-            <!-- Header Action Controls -->
-            <div class="flex items-center space-x-3">
-                <button onclick="openProfileModal()" class="w-9 h-9 rounded-xl bg-brand-cardBg border border-brand-cardBorder flex items-center justify-center text-gray-300 hover:text-white hover:border-brand-orange transition" title="Personal Settings & Goals">
-                    <i class="fa-solid fa-user-gear text-sm"></i>
-                </button>
-
-                <button onclick="openLogModal()" class="bg-gradient-to-r from-brand-orange to-brand-fire hover:from-brand-fire hover:to-brand-orange text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm transition shadow-lg shadow-brand-fire/25 flex items-center gap-2">
-                    <i class="fa-solid fa-plus text-xs"></i>
-                    <span>Log Workout</span>
-                </button>
-
-                <!-- More Options Menu -->
-                <div class="relative group">
-                    <button class="w-9 h-9 rounded-xl bg-brand-cardBg border border-brand-cardBorder flex items-center justify-center text-gray-300 hover:text-white hover:border-gray-500 transition">
-                        <i class="fa-solid fa-ellipsis-vertical text-sm"></i>
-                    </button>
-                    <!-- Dropdown -->
-                    <div class="absolute right-0 mt-2 w-52 glass-card bg-brand-cardBg border border-brand-cardBorder rounded-2xl shadow-2xl py-2 hidden group-hover:block group-focus-within:block z-50">
-                        <button onclick="exportJSONBackup()" class="w-full text-left px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-brand-cardBorder hover:text-brand-cyan flex items-center gap-2.5">
-                            <i class="fa-solid fa-download text-brand-cyan"></i> Export Data Backup
-                        </button>
-                        <label class="w-full text-left px-4 py-2.5 text-xs font-semibold text-gray-300 hover:bg-brand-cardBorder hover:text-brand-neon flex items-center gap-2.5 cursor-pointer">
-                            <i class="fa-solid fa-upload text-brand-neon"></i> Restore Data File
-                            <input type="file" id="importJsonInput" onchange="importJSONBackup(event)" accept=".json" class="hidden">
-                        </label>
-                        <hr class="border-brand-cardBorder my-1">
-                        <button onclick="confirmResetAllData()" class="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 flex items-center gap-2.5">
-                            <i class="fa-solid fa-trash-can"></i> Reset Personal Memory
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Dashboard Container -->
-    <main class="max-w-7xl mx-auto px-4 lg:px-8 pt-6 space-y-6 flex-grow w-full">
-
-        <!-- Top Section: Personal Streak Hero & Today's Actions -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <!-- Streak Hero Display (2 Cols) -->
-            <div class="lg:col-span-2 glass-card rounded-3xl p-6 sm:p-7 relative overflow-hidden flex flex-col justify-between border border-brand-cardBorder shadow-2xl">
-                <!-- Glowing Accent -->
-                <div class="absolute -right-20 -top-20 w-72 h-72 bg-brand-fire/10 rounded-full blur-3xl pointer-events-none"></div>
-
-                <div>
-                    <div class="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 relative z-10">
-                        <!-- Flame Badge Visual -->
-                        <div class="flex flex-col items-center">
-                            <div id="streakFlameBox" class="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-gradient-to-b from-brand-cardBg to-black/50 border border-brand-cardBorder flex items-center justify-center relative">
-                                <i id="streakFlameIcon" class="fa-solid fa-fire text-6xl text-gray-600 transition-all duration-500"></i>
-                                <span id="streakBadgeTag" class="absolute -bottom-2 bg-gray-800 text-gray-400 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-gray-700 tracking-wider uppercase">
-                                    INACTIVE
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Streak Info Text -->
-                        <div class="text-center sm:text-left flex-grow">
-                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-orange/10 border border-brand-orange/20 text-brand-orange text-xs font-bold mb-2">
-                                <i class="fa-solid fa-bolt"></i> Daily Workout Momentum
-                            </div>
-                            <h2 class="text-4xl sm:text-5xl font-black text-white tracking-tight">
-                                <span id="heroCurrentStreak">0</span> <span class="text-lg font-bold text-gray-400">DAYS STREAK</span>
-                            </h2>
-                            <p id="heroMotivationText" class="text-xs sm:text-sm text-gray-400 mt-2 max-w-lg">
-                                Log your workout or take a planned Rest Day to keep your daily streak alive!
-                            </p>
-
-                            <!-- Mini Record Chips -->
-                            <div class="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs font-semibold">
-                                <div class="bg-black/40 border border-brand-cardBorder px-3 py-1.5 rounded-xl text-gray-300 flex items-center gap-2">
-                                    <i class="fa-solid fa-trophy text-amber-400"></i>
-                                    Record: <span id="heroLongestStreak" class="text-white font-bold">0 Days</span>
-                                </div>
-                                <div class="bg-black/40 border border-brand-cardBorder px-3 py-1.5 rounded-xl text-gray-300 flex items-center gap-2">
-                                    <i class="fa-solid fa-bullseye text-brand-neon"></i>
-                                    Target Goal: <span id="heroWeeklyGoal" class="text-white font-bold">5 Days/Wk</span>
-                                </div>
-                                <div class="bg-black/40 border border-brand-cardBorder px-3 py-1.5 rounded-xl text-gray-300 flex items-center gap-2">
-                                    <i class="fa-solid fa-shield-halved text-brand-cyan"></i>
-                                    Rest Days Allowed: <span id="heroRestDaysCount" class="text-white font-bold">Unlimited</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Today Status Bar & One-Tap Actions -->
-                <div class="mt-6 pt-5 border-t border-brand-cardBorder/80 flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10">
-                    <div class="text-xs text-gray-300 text-center sm:text-left">
-                        Today Status: <span id="todayStatusText" class="font-extrabold text-amber-400">Pending Workout</span>
-                    </div>
-
-                    <div class="flex items-center gap-3 w-full sm:w-auto">
-                        <!-- Freeze / Rest Day Button -->
-                        <button id="restDayBtn" onclick="toggleRestDayToday()" class="w-1/2 sm:w-auto bg-brand-cardBg hover:bg-brand-cardBorder text-gray-300 hover:text-white border border-brand-cardBorder font-bold px-4 py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-2" title="Mark today as a planned Rest Day (Streak Protected)">
-                            <i class="fa-solid fa-bed text-brand-cyan"></i>
-                            <span id="restDayBtnLabel">Log Rest Day</span>
-                        </button>
-
-                        <!-- Mark Complete Today Button -->
-                        <button id="quickCompleteTodayBtn" onclick="quickMarkTodayComplete()" class="w-1/2 sm:w-auto bg-gradient-to-r from-brand-neon to-emerald-500 hover:from-emerald-400 hover:to-brand-neon text-black font-extrabold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-brand-neon/20 text-xs flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-circle-check text-base"></i>
-                            <span>Mark Today Done</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quick Preset Workouts & Goals -->
-            <div class="glass-card rounded-3xl p-6 border border-brand-cardBorder flex flex-col justify-between shadow-2xl">
-                <div>
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-wand-magic-sparkles text-brand-orange"></i>
-                            Quick Preset Workouts
-                        </h3>
-                        <button onclick="openProfileModal()" class="text-[10px] font-bold text-brand-orange hover:underline">Customize</button>
-                    </div>
-                    <p class="text-xs text-gray-400 mb-4">Tap any preset to instantly record today's session:</p>
-
-                    <div class="space-y-2.5" id="presetsContainer">
-                        <!-- Dynamically populated via JS -->
-                    </div>
-                </div>
-
-                <div class="mt-4 pt-3 border-t border-brand-cardBorder/80">
-                    <button onclick="openLogModal()" class="w-full py-2.5 text-xs font-bold text-gray-300 hover:text-white bg-brand-cardBg hover:bg-brand-cardBorder rounded-xl border border-brand-cardBorder transition text-center block">
-                        <i class="fa-solid fa-pen-to-square mr-1.5"></i> Custom Detailed Session
-                    </button>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Key Metrics Analytics Grid -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="glass-card rounded-2xl p-4 border border-brand-cardBorder flex items-center justify-between">
-                <div>
-                    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Total Sessions</p>
-                    <h3 id="statTotalWorkouts" class="text-2xl sm:text-3xl font-black text-white mt-1">0</h3>
-                </div>
-                <div class="w-10 h-10 rounded-xl bg-brand-cyan/10 text-brand-cyan flex items-center justify-center text-lg">
-                    <i class="fa-solid fa-dumbbell"></i>
-                </div>
-            </div>
-
-            <div class="glass-card rounded-2xl p-4 border border-brand-cardBorder flex items-center justify-between">
-                <div>
-                    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">This Week</p>
-                    <h3 id="statWeeklyCount" class="text-2xl sm:text-3xl font-black text-white mt-1">0 / 5</h3>
-                </div>
-                <div class="w-10 h-10 rounded-xl bg-brand-neon/10 text-brand-neon flex items-center justify-center text-lg">
-                    <i class="fa-solid fa-calendar-week"></i>
-                </div>
-            </div>
-
-            <div class="glass-card rounded-2xl p-4 border border-brand-cardBorder flex items-center justify-between">
-                <div>
-                    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Total Time</p>
-                    <h3 id="statTotalDuration" class="text-2xl sm:text-3xl font-black text-white mt-1">0m</h3>
-                </div>
-                <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg">
-                    <i class="fa-solid fa-clock"></i>
-                </div>
-            </div>
-
-            <div class="glass-card rounded-2xl p-4 border border-brand-cardBorder flex items-center justify-between">
-                <div>
-                    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Est. Calories Burned</p>
-                    <h3 id="statTotalCalories" class="text-2xl sm:text-3xl font-black text-white mt-1">0 kcal</h3>
-                </div>
-                <div class="w-10 h-10 rounded-xl bg-brand-purple/10 text-brand-purple flex items-center justify-center text-lg">
-                    <i class="fa-solid fa-fire-flame-curved"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- Interactive Monthly Calendar Heatmap -->
-        <div class="glass-card rounded-3xl p-6 border border-brand-cardBorder shadow-2xl">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <div>
-                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-calendar-days text-brand-neon"></i>
-                        Monthly Activity Heatmap
-                    </h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Visual record of workouts completed, rest days, and missed days</p>
-                </div>
-
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center bg-brand-cardBg border border-brand-cardBorder rounded-xl p-1">
-                        <button onclick="changeHeatmapMonth(-1)" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white rounded-lg hover:bg-brand-cardBorder transition">
-                            <i class="fa-solid fa-chevron-left text-xs"></i>
-                        </button>
-                        <span id="heatmapMonthTitle" class="px-3 text-xs font-bold text-white min-w-[120px] text-center">October 2026</span>
-                        <button onclick="changeHeatmapMonth(1)" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-white rounded-lg hover:bg-brand-cardBorder transition">
-                            <i class="fa-solid fa-chevron-right text-xs"></i>
-                        </button>
-                    </div>
-
-                    <button onclick="goToCurrentMonth()" class="text-xs font-semibold text-brand-cyan hover:underline px-2">
-                        Current Month
-                    </button>
-                </div>
-            </div>
-
-            <!-- Heatmap Legend -->
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-4 text-xs text-gray-400 border-b border-brand-cardBorder/60 pb-3">
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-3.5 h-3.5 rounded-md bg-brand-neon inline-block shadow-sm"></span>
-                        <span>Worked Out</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-3.5 h-3.5 rounded-md bg-brand-cyan/80 inline-block border border-brand-cyan"></span>
-                        <span>Rest Day (Streak Freeze)</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-3.5 h-3.5 rounded-md bg-brand-cardBg border border-brand-cardBorder inline-block"></span>
-                        <span>Rest / Open</span>
-                    </div>
-                </div>
-                <div id="heatmapMonthSummary" class="font-medium text-gray-300">
-                    Active Days: 0
-                </div>
-            </div>
-
-            <!-- Grid Container -->
-            <div class="overflow-x-auto">
-                <div class="min-w-[620px]">
-                    <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        <div>Sun</div>
-                        <div>Mon</div>
-                        <div>Tue</div>
-                        <div>Wed</div>
-                        <div>Thu</div>
-                        <div>Fri</div>
-                        <div>Sat</div>
-                    </div>
-                    <div id="calendarGrid" class="grid grid-cols-7 gap-2">
-                        <!-- Rendered dynamically -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Milestone Badges & Trophies -->
-        <div class="glass-card rounded-3xl p-6 border border-brand-cardBorder shadow-2xl">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-award text-amber-400"></i>
-                        Personal Trophies & Milestones
-                    </h3>
-                    <p class="text-xs text-gray-400">Badges unlock automatically as you hit workout milestones</p>
-                </div>
-                <div class="text-xs font-bold text-brand-orange bg-brand-orange/10 border border-brand-orange/20 px-3 py-1 rounded-full">
-                    Unlocked: <span id="unlockedBadgesCount">0/8</span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="badgesGrid">
-                <!-- Dynamic Badges -->
-            </div>
-        </div>
-
-        <!-- Personal Workout Log History -->
-        <div class="glass-card rounded-3xl p-6 border border-brand-cardBorder shadow-2xl space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-list-check text-brand-cyan"></i>
-                        Workout History Log
-                    </h3>
-                    <p class="text-xs text-gray-400">Full chronological memory of all your logged sessions</p>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-3">
-                    <!-- Category Filter -->
-                    <div class="relative">
-                        <select id="historyCatFilter" onchange="renderHistoryTable()" class="bg-brand-cardBg border border-brand-cardBorder text-gray-200 text-xs rounded-xl px-3 py-2 pr-8 focus:outline-none focus:border-brand-cyan appearance-none cursor-pointer">
-                            <option value="ALL">All Categories</option>
-                            <option value="Strength">Strength</option>
-                            <option value="Cardio">Cardio</option>
-                            <option value="HIIT">HIIT</option>
-                            <option value="Running">Running</option>
-                            <option value="Cycling">Cycling</option>
-                            <option value="Yoga">Yoga</option>
-                            <option value="RestDay">Rest Days</option>
-                        </select>
-                        <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-[10px] text-gray-400 pointer-events-none"></i>
-                    </div>
-
-                    <!-- Search Input -->
-                    <div class="relative">
-                        <input type="text" id="historySearch" onkeyup="renderHistoryTable()" placeholder="Search logs..." class="bg-brand-cardBg border border-brand-cardBorder text-gray-200 text-xs rounded-xl pl-8 pr-3 py-2 focus:outline-none focus:border-brand-cyan w-36 sm:w-48">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-gray-500"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Table -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-brand-cardBorder text-xs font-bold text-gray-400 uppercase tracking-wider bg-black/20">
-                            <th class="p-3 rounded-l-xl">Date</th>
-                            <th class="p-3">Workout / Activity</th>
-                            <th class="p-3">Type</th>
-                            <th class="p-3">Duration</th>
-                            <th class="p-3">Burned</th>
-                            <th class="p-3">Notes & Exercises</th>
-                            <th class="p-3 text-right rounded-r-xl">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyTableBody" class="text-sm divide-y divide-brand-cardBorder/50">
-                        <!-- Populated via JS -->
-                    </tbody>
-                </table>
-            </div>
-
-            <div id="historyEmptyState" class="hidden text-center py-10">
-                <div class="w-14 h-14 rounded-full bg-brand-cardBg flex items-center justify-center mx-auto text-gray-600 text-xl mb-2">
-                    <i class="fa-solid fa-dumbbell"></i>
-                </div>
-                <p class="text-gray-400 text-xs font-semibold">No workout records found.</p>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- Log Workout Modal -->
-    <div id="logModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
-        <div class="glass-card bg-brand-cardBg border border-brand-cardBorder rounded-3xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            
-            <button onclick="closeLogModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white w-8 h-8 rounded-xl bg-brand-cardBorder/50 flex items-center justify-center transition">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-
-            <div class="flex items-center gap-3 mb-5">
-                <div class="w-10 h-10 rounded-xl bg-brand-orange/20 text-brand-orange flex items-center justify-center font-bold">
-                    <i class="fa-solid fa-dumbbell text-lg"></i>
-                </div>
-                <div>
-                    <h3 id="logModalTitle" class="text-lg font-bold text-white">Log Workout Session</h3>
-                    <p class="text-xs text-gray-400">Save session metrics to your personal memory</p>
-                </div>
-            </div>
-
-            <form id="workoutForm" onsubmit="saveWorkoutForm(event)" class="space-y-4">
-                <input type="hidden" id="editingLogId" value="">
-
-                <!-- Date -->
-                <div>
-                    <label class="block text-xs font-semibold text-gray-300 mb-1">Date</label>
-                    <input type="date" id="formDate" required class="w-full bg-black/40 border border-brand-cardBorder rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange">
-                </div>
-
-                <!-- Title -->
-                <div>
-                    <label class="block text-xs font-semibold text-gray-300 mb-1">Workout Title / Name</label>
-                    <input type="text" id="formTitle" placeholder="e.g. Upper Body Hypertrophy" required class="w-full bg-black/40 border border-brand-cardBorder rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange">
-                </div>
-
-                <!-- Category & Duration -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">Category Type</label>
-                        <select id="formCategory" class="w-full bg-black/40 border border-brand-cardBorder rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange cursor-pointer">
-                            <option value="Strength">Strength Training</option>
-                            <option value="Cardio">Cardio</option>
-                            <option value="HIIT">HIIT / Circuit</option>
-                            <option value="Running">Running</option>
-                            <option value="Cycling">Cycling</option>
-                            <option value="Yoga">Yoga & Mobility</option>
-                            <option value="Other">Other Sport</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">Duration (Minutes)</label>
-                        <input type="number" id="formDuration" min="1" max="600" value="45" required class="w-full bg-black/40 border border-brand-cardBorder rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange">
-                    </div>
-                </div>
-
-                <!-- Calories & Intensity -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">Est. Calories Burned</label>
-                        <input type="number" id="formCalories" min="0" placeholder="e.g. 350" class="w-full bg-black/40 border border-brand-cardBorder rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-300 mb-1">Intensity</label>
-                        <select id="formIntensity" class="w-full bg-black/40 border border-brand-cardBorder rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange cursor-pointer">
-                            <option value="Low">Low Effort 😊</option>
-                            <option value="Moderate" selected>Moderate Effort 💪</option>
-                            <option value="High">High Effort / Hard ⚡</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Exercises & Notes -->
-                <div>
-                    <label class="block text-xs font-semibold text-gray-300 mb-1">Exercises Performed & Notes</label>
-                    <textarea id="formNotes" rows="3" placeholder="e.g. Bench Press 4x8 @ 80kg, Dumbbell Rows, Tricep pushdowns..." class="w-full bg-black/40 border border-brand-cardBorder rounded-xl p-3 text-xs text-white focus:outline-none focus:border-brand-orange resize-none"></textarea>
-                </div>
-
-                <div class="pt-3 flex gap-3">
-                    <button type="button" onclick="closeLogModal()" class="w-1/2 py-2.5 rounded-xl border border-brand-cardBorder text-gray-300 hover:text-white hover:bg-brand-cardBorder text-xs font-bold transition">
-                        Cancel
-                    </button>
-                    <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-gradient-to-r from-brand-orange to-brand-fire text-white text-xs font-bold transition shadow-lg shadow-brand-fire/20">
-                        Save Log
-                    </button>
-                </div>
-            </form>
-        </div>
+    <!-- Streak Display Card -->
+    <div class="card streak-display">
+      <h3>Current Streak</h3>
+      <div class="streak-number" id="streakCount">0 Days</div>
+      <p id="streakMessage" style="color: var(--text-muted); margin: 0;">Keep pushing forward!</p>
     </div>
 
-    <!-- Personal Profile & Settings Modal -->
-    <div id="profileModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
-        <div class="glass-card bg-brand-cardBg border border-brand-cardBorder rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
-            
-            <button onclick="closeProfileModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white w-8 h-8 rounded-xl bg-brand-cardBorder/50 flex items-center justify-center transition">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-
-            <div class="flex items-center gap-3 mb-5">
-                <div class="w-10 h-10 rounded-xl bg-brand-cyan/20 text-brand-cyan flex items-center justify-center font-bold">
-                    <i class="fa-solid fa-user-gear text-lg"></i>
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold text-white">Personal Settings & Goals</h3>
-                    <p class="text-xs text-gray-400">Tailor your targets and workout presets</p>
-                </div>
-            </div>
-
-            <form onsubmit="saveProfileSettings(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-300 mb-1">Your Name</label>
-                    <input type="text" id="profName" placeholder="e.g. Alex" required class="w-full bg-black/40 border border-brand-cardBorder rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-cyan">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-300 mb-1">Weekly Target Workout Days</label>
-                    <select id="profWeeklyGoal" class="w-full bg-black/40 border border-brand-cardBorder rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-cyan">
-                        <option value="3">3 Days / Week</option>
-                        <option value="4">4 Days / Week</option>
-                        <option value="5" selected>5 Days / Week</option>
-                        <option value="6">6 Days / Week</option>
-                        <option value="7">7 Days / Week (Everyday)</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-300 mb-1">Daily Target Session Duration (Mins)</label>
-                    <input type="number" id="profDailyMins" min="10" max="300" value="45" class="w-full bg-black/40 border border-brand-cardBorder rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-brand-cyan">
-                </div>
-
-                <div class="pt-3 flex gap-3">
-                    <button type="button" onclick="closeProfileModal()" class="w-1/2 py-2.5 rounded-xl border border-brand-cardBorder text-gray-300 hover:text-white hover:bg-brand-cardBorder text-xs font-bold transition">
-                        Cancel
-                    </button>
-                    <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-gradient-to-r from-brand-cyan to-blue-600 text-white text-xs font-bold transition shadow-lg shadow-brand-cyan/20">
-                        Save Settings
-                    </button>
-                </div>
-            </form>
-        </div>
+    <!-- // [NEW] Custom Presets Manager Card -->
+    <div class="card">
+      <h3>Manage Workout Presets</h3>
+      <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+        <input type="text" id="newPresetInput" placeholder="New Preset (e.g. Upper Body)">
+        <button class="btn" onclick="addPreset()" style="width: auto; padding: 10px 16px;">Add</button>
+      </div>
+      <div id="presetListContainer" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
     </div>
 
-    <!-- Celebration Modal -->
-    <div id="celebrationModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
-        <div class="glass-card bg-brand-cardBg border border-brand-orange/40 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl relative">
-            <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-brand-fire to-brand-accent mx-auto flex items-center justify-center shadow-2xl shadow-brand-fire/50 animate-bounce mb-4">
-                <i class="fa-solid fa-fire text-4xl text-white"></i>
-            </div>
-
-            <h3 class="text-2xl font-black text-white">STREAK ON FIRE!</h3>
-            <p id="celebrationText" class="text-xs text-gray-300 mt-2">
-                Great job! Workout completed for today.
-            </p>
-
-            <div class="my-5 p-4 rounded-2xl bg-black/40 border border-brand-cardBorder">
-                <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Active Daily Streak</p>
-                <p id="celebrationStreakVal" class="text-4xl font-black text-brand-orange mt-1">1 Day</p>
-            </div>
-
-            <button onclick="closeCelebrationModal()" class="w-full py-3 rounded-xl bg-gradient-to-r from-brand-orange to-brand-fire text-white font-bold text-xs shadow-lg shadow-brand-fire/30 hover:opacity-90 transition">
-                Keep Up The Momentum! 🚀
-            </button>
-        </div>
+    <!-- Log Workout Card -->
+    <div class="card">
+      <h3>Log Custom Workout</h3>
+      <div class="form-group">
+        <label for="workoutTypeSelect">Workout Type / Name</label>
+        <select id="workoutTypeSelect">
+          <!-- Dynamically populated from presets -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="durationInput">Duration (minutes)</label>
+        <input type="number" id="durationInput" value="30">
+      </div>
+      <div class="form-group">
+        <label for="intensitySelect">Intensity</label>
+        <select id="intensitySelect">
+          <option value="Low">Low</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="High">High</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="notesInput">Notes / Exercises (Sets, Reps, Weights)</label>
+        <textarea id="notesInput" placeholder="e.g. Bench press 3x10 @ 115lbs"></textarea>
+      </div>
+      <button class="btn" onclick="logWorkoutToday()">Log Workout for Today</button>
+      
+      <!-- // [NEW] Undo / Remove Last Log Button -->
+      <button class="btn btn-danger" onclick="undoLastLog()" style="margin-top: 10px;">🗑️ Remove Last Logged Day</button>
     </div>
 
-    <script>
-        /* ==========================================================================
-           STATE & LOCAL STORAGE MEMORY ENGINE
-           ========================================================================== */
+    <!-- Calendar Heatmap Card -->
+    <div class="card">
+      <h3>Recent Activity Heatmap</h3>
+      <div id="calendarGrid" class="calendar-grid">
+        <!-- Generated via JS -->
+      </div>
+    </div>
 
-        const STORAGE_KEY = 'FITSTREAK_PERSONAL_APP_V2';
+  </div>
 
-        let appData = {
-            profile: {
-                name: "Alex",
-                weeklyGoalDays: 5,
-                dailyTargetMins: 45
-            },
-            workouts: [], // { id, date: 'YYYY-MM-DD', title, category, duration, calories, intensity, notes, isRestDay }
-            currentStreak: 0,
-            longestStreak: 0
-        };
+  <script>
+    // --- [NEW] PRESET MANAGEMENT STATE & LOGIC ---
+    let presets = JSON.parse(localStorage.getItem('workout_presets')) || [
+      "Full Body Strength",
+      "20m HIIT Shred"
+    ];
 
-        // Heatmap navigation date state
-        let heatmapViewDate = new Date();
+    function savePresets() {
+      localStorage.setItem('workout_presets', JSON.stringify(presets));
+      renderPresets();
+    }
 
-        // Default Presets
-        const DEFAULT_PRESETS = [
-            { title: "Full Body Strength", category: "Strength", duration: 45, calories: 350, intensity: "High", icon: "fa-dumbbell", color: "orange" },
-            { title: "30m Cardio Run", category: "Running", duration: 30, calories: 300, intensity: "Moderate", icon: "fa-person-running", color: "cyan" },
-            { title: "20m HIIT Shred", category: "HIIT", duration: 20, calories: 220, intensity: "High", icon: "fa-fire-burner", color: "red" },
-            { title: "Evening Yoga & Stretch", category: "Yoga", duration: 25, calories: 120, intensity: "Low", icon: "fa-spa", color: "purple" }
-        ];
+    function renderPresets() {
+      const container = document.getElementById('presetListContainer');
+      const selectDropdown = document.getElementById('workoutTypeSelect');
+      
+      if (!container) return;
+      container.innerHTML = '';
+      
+      // Render removable preset badges
+      presets.forEach((preset, index) => {
+        const badge = document.createElement('div');
+        badge.className = 'preset-badge';
+        badge.innerHTML = `
+          <span>${preset}</span>
+          <button onclick="removePreset(${index})" title="Delete preset">&times;</button>
+        `;
+        container.appendChild(badge);
+      });
 
-        // Trophy Definitions
-        const TROPHIES = [
-            { id: 'streak_3', title: '3-Day Spark', minStreak: 3, type: 'streak', icon: 'fa-fire-burner', color: 'from-amber-500 to-orange-500' },
-            { id: 'streak_7', title: '7-Day Flame', minStreak: 7, type: 'streak', icon: 'fa-fire', color: 'from-orange-500 to-red-500' },
-            { id: 'streak_14', title: '14-Day Torch', minStreak: 14, type: 'streak', icon: 'fa-bolt', color: 'from-red-500 to-pink-500' },
-            { id: 'streak_30', title: '30-Day Inferno', minStreak: 30, type: 'streak', icon: 'fa-dragon', color: 'from-purple-500 to-indigo-500' },
-            { id: 'count_10', title: '10 Workouts Club', minWorkouts: 10, type: 'count', icon: 'fa-shield-halved', color: 'from-cyan-500 to-blue-500' },
-            { id: 'count_50', title: '50 Workouts Veteran', minWorkouts: 50, type: 'count', icon: 'fa-dumbbell', color: 'from-emerald-500 to-teal-500' },
-            { id: 'count_100', title: '100 Workouts Titan', minWorkouts: 100, type: 'count', icon: 'fa-crown', color: 'from-yellow-400 to-amber-600' },
-            { id: 'variety', title: 'All-Rounder', reqCategories: 4, type: 'variety', icon: 'fa-layer-group', color: 'from-pink-500 to-purple-600' }
-        ];
-
-        /* ==========================================================================
-           LIFECYCLE & INITIALIZATION
-           ========================================================================== */
-
-        window.onload = function() {
-            loadMemory();
-            document.getElementById('formDate').value = getTodayKey();
-            recalculateStreak();
-            renderAllViews();
-        };
-
-        function formatDateToKey(d) {
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${y}-${m}-${day}`;
+      // Update dropdown options
+      if (selectDropdown) {
+        const currentSelection = selectDropdown.value;
+        selectDropdown.innerHTML = '';
+        presets.forEach(preset => {
+          const opt = document.createElement('option');
+          opt.value = preset;
+          opt.textContent = preset;
+          selectDropdown.appendChild(opt);
+        });
+        if (presets.includes(currentSelection)) {
+          selectDropdown.value = currentSelection;
         }
+      }
+    }
 
-        function getTodayKey() {
-            return formatDateToKey(new Date());
+    function addPreset() {
+      const input = document.getElementById('newPresetInput');
+      const val = input.value.trim();
+      if (val && !presets.includes(val)) {
+        presets.push(val);
+        input.value = '';
+        savePresets();
+      }
+    }
+
+    function removePreset(index) {
+      if (presets.length <= 1) {
+        alert("You must keep at least one workout preset!");
+        return;
+      }
+      presets.splice(index, 1);
+      savePresets();
+    }
+
+    // --- CORE TRACKER LOGIC ---
+    function getTodayString() {
+      const d = new Date();
+      return d.toISOString().split('T')[0];
+    }
+
+    function getStoredLogs() {
+      return JSON.parse(localStorage.getItem('workout_logs')) || [];
+    }
+
+    function saveLogs(logs) {
+      localStorage.setItem('workout_logs', JSON.stringify(logs));
+    }
+
+    function logWorkoutToday() {
+      const logs = getStoredLogs();
+      const today = getTodayString();
+      
+      const workoutEntry = {
+        date: today,
+        type: document.getElementById('workoutTypeSelect').value,
+        duration: document.getElementById('durationInput').value,
+        intensity: document.getElementById('intensitySelect').value,
+        notes: document.getElementById('notesInput').value,
+        timestamp: new Date().getTime()
+      };
+
+      // Check if already logged today, update or add
+      const existingIndex = logs.findIndex(l => l.date === today);
+      if (existingIndex >= 0) {
+        logs[existingIndex] = workoutEntry; // update entry
+      } else {
+        logs.push(workoutEntry);
+      }
+
+      saveLogs(logs);
+      updateTrackerUI();
+      alert("Workout logged successfully!");
+    }
+
+    // --- [NEW] UNDO / REMOVE LAST LOG LOGIC ---
+    function undoLastLog() {
+      let logs = getStoredLogs();
+      if (logs.length === 0) {
+        alert("No workout logs found to remove.");
+        return;
+      }
+
+      // Sort by timestamp descending to find the absolute newest log
+      logs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      
+      const removed = logs.shift(); // Remove newest log
+      saveLogs(logs);
+      updateTrackerUI();
+      alert(`Successfully removed last logged entry (${removed.date} - ${removed.type})!`);
+    }
+
+    function calculateStreak(logs) {
+      if (logs.length === 0) return 0;
+      
+      // Extract unique dates and sort descending
+      const uniqueDates = [...new Set(logs.map(l => l.date))].sort((a, b) => new Date(b) - new Date(a));
+      
+      let streak = 0;
+      let checkDate = new Date();
+      
+      // Normalize to midnight string format
+      const formatDate = (d) => d.toISOString().split('T')[0];
+      
+      let todayStr = formatDate(checkDate);
+      let yesterdayDate = new Date();
+      yesterdayDate.setDate(checkDate.getDate() - 1);
+      let yesterdayStr = formatDate(yesterdayDate);
+
+      // Check if user logged today or yesterday to keep streak alive
+      if (!uniqueDates.includes(todayStr) && !uniqueDates.includes(yesterdayStr)) {
+        return 0;
+      }
+
+      // Start counting backwards from the most recent active date
+      let currentDate = new Date(uniqueDates.includes(todayStr) ? todayStr : yesterdayStr);
+      
+      while (true) {
+        let dateStr = formatDate(currentDate);
+        if (uniqueDates.includes(dateStr)) {
+          streak++;
+          currentDate.setDate(currentDate.getDate() - 1);
+        } else {
+          break;
         }
+      }
+      
+      return streak;
+    }
 
-        function loadMemory() {
-            try {
-                const stored = localStorage.getItem(STORAGE_KEY);
-                if (stored) {
-                    appData = JSON.parse(stored);
-                } else {
-                    seedSampleMemory();
-                }
-            } catch (e) {
-                console.error("Failed to load memory:", e);
-                seedSampleMemory();
-            }
+    function renderCalendar(logs) {
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+      
+      const loggedDates = logs.map(l => l.date);
+      
+      // Render last 28 days for the heatmap grid
+      for (let i = 27; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        
+        const dayCell = document.createElement('div');
+        dayCell.className = 'calendar-day';
+        dayCell.textContent = d.getDate();
+        
+        if (loggedDates.includes(dateStr)) {
+          dayCell.classList.add('completed');
+          dayCell.title = `Completed workout on ${dateStr}`;
         }
-
-        function saveMemory() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-            } catch (e) {
-                console.error("Failed to save memory:", e);
-            }
-        }
-
-        function seedSampleMemory() {
-            const today = new Date();
-            const yesterday = new Date(today);
-            yesterday.setDate(today.getDate() - 1);
-            const prev2 = new Date(today);
-            prev2.setDate(today.getDate() - 2);
-
-            appData = {
-                profile: {
-                    name: "Alex",
-                    weeklyGoalDays: 5,
-                    dailyTargetMins: 45
-                },
-                workouts: [
-                    {
-                        id: 'seed_1',
-                        date: formatDateToKey(prev2),
-                        title: 'Upper Body Strength',
-                        category: 'Strength',
-                        duration: 45,
-                        calories: 360,
-                        intensity: 'High',
-                        notes: 'Bench press, Overhead press, Dumbbell flies',
-                        isRestDay: false
-                    },
-                    {
-                        id: 'seed_2',
-                        date: formatDateToKey(yesterday),
-                        title: 'Outdoor Run',
-                        category: 'Running',
-                        duration: 30,
-                        calories: 280,
-                        intensity: 'Moderate',
-                        notes: 'Interval sprints at local track',
-                        isRestDay: false
-                    }
-                ],
-                currentStreak: 2,
-                longestStreak: 2
-            };
-            saveMemory();
-        }
-
-        /* ==========================================================================
-           STREAK ENGINE WITH REST DAY / STREAK FREEZE SUPPORT
-           ========================================================================== */
-
-        function recalculateStreak() {
-            if (!appData.workouts || appData.workouts.length === 0) {
-                appData.currentStreak = 0;
-                saveMemory();
-                return;
-            }
-
-            // Map entries by date
-            const dateMap = {};
-            appData.workouts.forEach(w => {
-                dateMap[w.date] = w;
-            });
-
-            const sortedDates = Object.keys(dateMap).sort().reverse();
-            const todayStr = getTodayKey();
-
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayStr = formatDateToKey(yesterday);
-
-            const hasToday = Boolean(dateMap[todayStr]);
-            const hasYesterday = Boolean(dateMap[yesterdayStr]);
-
-            if (!hasToday && !hasYesterday) {
-                appData.currentStreak = 0;
-            } else {
-                let count = 0;
-                let checkDate = new Date(hasToday ? todayStr : yesterdayStr);
-
-                while (true) {
-                    const k = formatDateToKey(checkDate);
-                    if (dateMap[k]) {
-                        count++;
-                        checkDate.setDate(checkDate.getDate() - 1);
-                    } else {
-                        break;
-                    }
-                }
-                appData.currentStreak = count;
-            }
-
-            if (appData.currentStreak > (appData.longestStreak || 0)) {
-                appData.longestStreak = appData.currentStreak;
-            }
-
-            saveMemory();
-        }
-
-        /* ==========================================================================
-           RENDER FUNCTIONS
-           ========================================================================== */
-
-        function renderAllViews() {
-            renderHeaderAndProfile();
-            renderStreakHero();
-            renderPresets();
-            renderMetrics();
-            renderHeatmap();
-            renderTrophies();
-            renderHistoryTable();
-        }
-
-        function renderHeaderAndProfile() {
-            const name = appData.profile?.name || "My";
-            document.getElementById('navUserName').innerText = name + "'s";
-        }
-
-        function renderStreakHero() {
-            const streak = appData.currentStreak || 0;
-            const longest = appData.longestStreak || 0;
-            const goalDays = appData.profile?.weeklyGoalDays || 5;
-
-            document.getElementById('heroCurrentStreak').innerText = streak;
-            document.getElementById('heroLongestStreak').innerText = `${longest} Days`;
-            document.getElementById('heroWeeklyGoal').innerText = `${goalDays} Days/Wk`;
-
-            const flameBox = document.getElementById('streakFlameBox');
-            const flameIcon = document.getElementById('streakFlameIcon');
-            const badgeTag = document.getElementById('streakBadgeTag');
-            const motivation = document.getElementById('heroMotivationText');
-            const todayStatus = document.getElementById('todayStatusText');
-            const restDayBtnLabel = document.getElementById('restDayBtnLabel');
-
-            const todayStr = getTodayKey();
-            const todayLog = appData.workouts.find(w => w.date === todayStr);
-
-            if (streak > 0) {
-                flameIcon.className = "fa-solid fa-fire text-6xl text-brand-fire animate-flame";
-                flameBox.className = "w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-gradient-to-b from-brand-orange/20 to-brand-fire/10 border border-brand-orange/50 flex items-center justify-center relative shadow-lg shadow-brand-fire/30";
-                badgeTag.innerText = "ACTIVE STREAK";
-                badgeTag.className = "absolute -bottom-2 bg-brand-fire text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-md tracking-wider uppercase";
-                motivation.innerText = `Outstanding! You have a ${streak}-day streak burning bright. Stay committed!`;
-            } else {
-                flameIcon.className = "fa-solid fa-fire text-6xl text-gray-600";
-                flameBox.className = "w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-gradient-to-b from-brand-cardBg to-black/50 border border-brand-cardBorder flex items-center justify-center relative";
-                badgeTag.innerText = "INACTIVE";
-                badgeTag.className = "absolute -bottom-2 bg-gray-800 text-gray-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-gray-700 tracking-wider uppercase";
-                motivation.innerText = "Log a session today or freeze your streak with a Rest Day!";
-            }
-
-            if (todayLog) {
-                if (todayLog.isRestDay) {
-                    todayStatus.innerHTML = `<span class="text-brand-cyan font-bold"><i class="fa-solid fa-bed"></i> Rest Day Recorded (Streak Frozen)</span>`;
-                    restDayBtnLabel.innerText = "Cancel Rest Day";
-                } else {
-                    todayStatus.innerHTML = `<span class="text-brand-neon font-bold"><i class="fa-solid fa-circle-check"></i> Workout Completed Today!</span>`;
-                    restDayBtnLabel.innerText = "Log Rest Day";
-                }
-            } else {
-                todayStatus.innerHTML = `<span class="text-amber-400 font-bold"><i class="fa-solid fa-clock"></i> Pending Completion</span>`;
-                restDayBtnLabel.innerText = "Log Rest Day";
-            }
-        }
-
-        function renderPresets() {
-            const container = document.getElementById('presetsContainer');
-            container.innerHTML = '';
-
-            DEFAULT_PRESETS.forEach(p => {
-                const btn = document.createElement('button');
-                btn.onclick = () => logPresetWorkout(p);
-                btn.className = "w-full text-left p-3 rounded-2xl bg-black/30 hover:bg-brand-cardBorder/60 border border-brand-cardBorder hover:border-brand-orange/40 transition group flex items-center justify-between";
-
-                btn.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-xl bg-brand-orange/10 text-brand-orange flex items-center justify-center text-xs font-bold group-hover:scale-110 transition-transform">
-                            <i class="fa-solid ${p.icon}"></i>
-                        </div>
-                        <div>
-                            <h4 class="text-xs font-bold text-white group-hover:text-brand-orange transition">${p.title}</h4>
-                            <p class="text-[10px] text-gray-400">${p.duration} mins • ${p.calories} kcal</p>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-xs text-gray-500 group-hover:text-white transition"></i>
-                `;
-                container.appendChild(btn);
-            });
-        }
-
-        function renderMetrics() {
-            const total = appData.workouts.filter(w => !w.isRestDay).length;
-            document.getElementById('statTotalWorkouts').innerText = total;
-
-            // Weekly completion calculation
-            const now = new Date();
-            const startOfWeek = new Date(now);
-            const dayOfWeek = now.getDay();
-            startOfWeek.setDate(now.getDate() - dayOfWeek); // Sunday as start
-            startOfWeek.setHours(0, 0, 0, 0);
-
-            const thisWeekWorkouts = appData.workouts.filter(w => {
-                const parts = w.date.split('-');
-                const wDate = new Date(parts[0], parts[1] - 1, parts[2]);
-                return wDate >= startOfWeek && !w.isRestDay;
-            });
-
-            const weeklyGoal = appData.profile?.weeklyGoalDays || 5;
-            document.getElementById('statWeeklyCount').innerText = `${thisWeekWorkouts.length} / ${weeklyGoal}`;
-
-            // Total Duration & Calories
-            const totalMins = appData.workouts.reduce((sum, w) => sum + (w.isRestDay ? 0 : (parseInt(w.duration) || 0)), 0);
-            if (totalMins >= 60) {
-                document.getElementById('statTotalDuration').innerText = `${(totalMins / 60).toFixed(1)}h`;
-            } else {
-                document.getElementById('statTotalDuration').innerText = `${totalMins}m`;
-            }
-
-            const totalCals = appData.workouts.reduce((sum, w) => sum + (w.isRestDay ? 0 : (parseInt(w.calories) || 0)), 0);
-            document.getElementById('statTotalCalories').innerText = `${totalCals.toLocaleString()} kcal`;
-        }
-
-        function changeHeatmapMonth(offset) {
-            heatmapViewDate.setMonth(heatmapViewDate.getMonth() + offset);
-            renderHeatmap();
-        }
-
-        function goToCurrentMonth() {
-            heatmapViewDate = new Date();
-            renderHeatmap();
-        }
-
-        function renderHeatmap() {
-            const year = heatmapViewDate.getFullYear();
-            const month = heatmapViewDate.getMonth();
-
-            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            document.getElementById('heatmapMonthTitle').innerText = `${monthNames[month]} ${year}`;
-
-            const grid = document.getElementById('calendarGrid');
-            grid.innerHTML = '';
-
-            const firstDayIndex = new Date(year, month, 1).getDay();
-            const totalDays = new Date(year, month + 1, 0).getDate();
-
-            const workoutMap = {};
-            appData.workouts.forEach(w => {
-                workoutMap[w.date] = w;
-            });
-
-            // Empty slots
-            for (let i = 0; i < firstDayIndex; i++) {
-                const empty = document.createElement('div');
-                empty.className = "h-11 rounded-xl bg-transparent";
-                grid.appendChild(empty);
-            }
-
-            const todayKey = getTodayKey();
-            let activeCount = 0;
-
-            for (let day = 1; day <= totalDays; day++) {
-                const dateObj = new Date(year, month, day);
-                const dateKey = formatDateToKey(dateObj);
-                const entry = workoutMap[dateKey];
-
-                const isToday = (dateKey === todayKey);
-                const cell = document.createElement('div');
-
-                let styleClasses = "bg-brand-cardBg/80 border-brand-cardBorder text-gray-400";
-
-                if (entry) {
-                    if (entry.isRestDay) {
-                        styleClasses = "bg-brand-cyan/20 border-brand-cyan/50 text-brand-cyan font-bold";
-                    } else {
-                        activeCount++;
-                        styleClasses = "bg-brand-neon text-black font-extrabold border-emerald-400 shadow-md shadow-brand-neon/20";
-                    }
-                }
-
-                const ring = isToday ? "ring-2 ring-brand-orange ring-offset-2 ring-offset-brand-darkBg" : "";
-
-                cell.className = `heatmap-cell h-11 rounded-xl border p-1.5 flex flex-col justify-between cursor-pointer relative ${styleClasses} ${ring}`;
-                cell.onclick = () => onCellClick(dateKey, entry);
-
-                cell.innerHTML = `
-                    <div class="flex items-center justify-between w-full">
-                        <span class="text-[10px] font-bold">${day}</span>
-                        ${entry ? (entry.isRestDay ? '<i class="fa-solid fa-bed text-[9px]"></i>' : '<i class="fa-solid fa-check text-[9px]"></i>') : ''}
-                    </div>
-                    ${entry ? `<span class="text-[8px] truncate font-semibold">${entry.isRestDay ? 'Rest' : entry.category}</span>` : ''}
-                `;
-
-                grid.appendChild(cell);
-            }
-
-            document.getElementById('heatmapMonthSummary').innerText = `Active Workout Days: ${activeCount} / ${totalDays}`;
-        }
-
-        function onCellClick(dateKey, entry) {
-            if (entry) {
-                editWorkoutLog(entry.id);
-            } else {
-                openLogModalWithDate(dateKey);
-            }
-        }
-
-        function renderTrophies() {
-            const grid = document.getElementById('badgesGrid');
-            grid.innerHTML = '';
-
-            const streak = Math.max(appData.currentStreak || 0, appData.longestStreak || 0);
-            const totalWorkouts = appData.workouts.filter(w => !w.isRestDay).length;
-            const categories = new Set(appData.workouts.filter(w => !w.isRestDay).map(w => w.category)).size;
-
-            let unlockedCount = 0;
-
-            TROPHIES.forEach(t => {
-                let unlocked = false;
-                if (t.type === 'streak') unlocked = streak >= t.minStreak;
-                if (t.type === 'count') unlocked = totalWorkouts >= t.minWorkouts;
-                if (t.type === 'variety') unlocked = categories >= t.reqCategories;
-
-                if (unlocked) unlockedCount++;
-
-                const card = document.createElement('div');
-                card.className = `p-4 rounded-2xl border transition-all flex flex-col items-center text-center ${
-                    unlocked 
-                    ? 'glass-card bg-brand-cardBg border-brand-orange/40 text-white shadow-lg shadow-brand-fire/10' 
-                    : 'bg-black/20 border-brand-cardBorder opacity-40 text-gray-500'
-                }`;
-
-                card.innerHTML = `
-                    <div class="w-11 h-11 rounded-xl bg-gradient-to-tr ${unlocked ? t.color : 'from-gray-800 to-gray-700'} flex items-center justify-center text-lg text-white mb-2 shadow-md">
-                        <i class="fa-solid ${t.icon}"></i>
-                    </div>
-                    <h4 class="text-xs font-bold text-white mb-0.5">${t.title}</h4>
-                    <span class="mt-1.5 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
-                        unlocked ? 'bg-brand-neon/20 text-brand-neon border border-brand-neon/30' : 'bg-gray-800 text-gray-500'
-                    }">
-                        ${unlocked ? 'Unlocked 🏆' : 'Locked'}
-                    </span>
-                `;
-
-                grid.appendChild(card);
-            });
-
-            document.getElementById('unlockedBadgesCount').innerText = `${unlockedCount}/${TROPHIES.length}`;
-        }
-
-        function renderHistoryTable() {
-            const body = document.getElementById('historyTableBody');
-            const empty = document.getElementById('historyEmptyState');
-            const catFilter = document.getElementById('historyCatFilter').value;
-            const query = document.getElementById('historySearch').value.toLowerCase().trim();
-
-            body.innerHTML = '';
-
-            let logs = appData.workouts.filter(w => {
-                let catMatch = true;
-                if (catFilter === 'RestDay') catMatch = w.isRestDay;
-                else if (catFilter !== 'ALL') catMatch = (!w.isRestDay && w.category === catFilter);
-
-                const searchMatch = w.title.toLowerCase().includes(query) || (w.notes && w.notes.toLowerCase().includes(query));
-                return catMatch && searchMatch;
-            });
-
-            logs.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            if (logs.length === 0) {
-                empty.classList.remove('hidden');
-            } else {
-                empty.classList.add('hidden');
-
-                logs.forEach(w => {
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-brand-cardBorder/30 transition";
-
-                    let catBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">${w.category}</span>`;
-                    if (w.isRestDay) {
-                        catBadge = `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/20">Rest Day</span>`;
-                    }
-
-                    tr.innerHTML = `
-                        <td class="p-3 text-xs font-semibold text-gray-300">${w.date}</td>
-                        <td class="p-3 text-xs font-bold text-white">${escapeHtml(w.title)}</td>
-                        <td class="p-3">${catBadge}</td>
-                        <td class="p-3 text-xs text-gray-300 font-semibold">${w.isRestDay ? '-' : w.duration + ' mins'}</td>
-                        <td class="p-3 text-xs text-gray-300">${w.isRestDay ? '-' : (w.calories || 0) + ' kcal'}</td>
-                        <td class="p-3 text-xs text-gray-400 max-w-xs truncate">${escapeHtml(w.notes || '-')}</td>
-                        <td class="p-3 text-right flex items-center justify-end gap-2">
-                            <button onclick="editWorkoutLog('${w.id}')" title="Edit entry" class="text-gray-400 hover:text-brand-cyan p-1">
-                                <i class="fa-solid fa-pen"></i>
-                            </button>
-                            <button onclick="deleteWorkoutLog('${w.id}')" title="Delete entry" class="text-gray-400 hover:text-red-400 p-1">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </td>
-                    `;
-                    body.appendChild(tr);
-                });
-            }
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>"']/g, function(m) {
-                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-            });
-        }
-
-        /* ==========================================================================
-           LOGGING & EVENT ACTIONS
-           ========================================================================== */
-
-        function openLogModal() {
-            document.getElementById('editingLogId').value = '';
-            document.getElementById('logModalTitle').innerText = 'Log Workout Session';
-            document.getElementById('formDate').value = getTodayKey();
-            document.getElementById('workoutForm').reset();
-            document.getElementById('formDate').value = getTodayKey();
-
-            const modal = document.getElementById('logModal');
-            modal.classList.remove('hidden');
-            setTimeout(() => modal.classList.remove('opacity-0'), 10);
-        }
-
-        function openLogModalWithDate(dateStr) {
-            openLogModal();
-            document.getElementById('formDate').value = dateStr;
-        }
-
-        function closeLogModal() {
-            const modal = document.getElementById('logModal');
-            modal.classList.add('opacity-0');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        }
-
-        function saveWorkoutForm(e) {
-            e.preventDefault();
-
-            const editId = document.getElementById('editingLogId').value;
-            const date = document.getElementById('formDate').value;
-            const title = document.getElementById('formTitle').value.trim();
-            const category = document.getElementById('formCategory').value;
-            const duration = parseInt(document.getElementById('formDuration').value) || 30;
-            const calories = parseInt(document.getElementById('formCalories').value) || 0;
-            const intensity = document.getElementById('formIntensity').value;
-            const notes = document.getElementById('formNotes').value.trim();
-
-            if (editId) {
-                // Update existing
-                const index = appData.workouts.findIndex(w => w.id === editId);
-                if (index !== -1) {
-                    appData.workouts[index] = {
-                        ...appData.workouts[index],
-                        date,
-                        title,
-                        category,
-                        duration,
-                        calories,
-                        intensity,
-                        notes,
-                        isRestDay: false
-                    };
-                }
-            } else {
-                // Add new
-                const newLog = {
-                    id: 'log_' + Date.now(),
-                    date,
-                    title,
-                    category,
-                    duration,
-                    calories,
-                    intensity,
-                    notes,
-                    isRestDay: false
-                };
-                appData.workouts.push(newLog);
-            }
-
-            recalculateStreak();
-            renderAllViews();
-            closeLogModal();
-
-            if (date === getTodayKey()) {
-                triggerCelebration("Awesome job completing today's workout!");
-            }
-        }
-
-        function quickMarkTodayComplete() {
-            const todayStr = getTodayKey();
-            const existing = appData.workouts.find(w => w.date === todayStr);
-
-            if (existing) {
-                existing.isRestDay = false;
-                existing.title = existing.title || "Daily Completed Session";
-            } else {
-                appData.workouts.push({
-                    id: 'log_' + Date.now(),
-                    date: todayStr,
-                    title: "Completed Workout",
-                    category: "Strength",
-                    duration: appData.profile?.dailyTargetMins || 45,
-                    calories: 320,
-                    intensity: "Moderate",
-                    notes: "Quick completed session recorded!",
-                    isRestDay: false
-                });
-            }
-
-            recalculateStreak();
-            renderAllViews();
-            triggerCelebration("Workout marked complete for today!");
-        }
-
-        function toggleRestDayToday() {
-            const todayStr = getTodayKey();
-            const index = appData.workouts.findIndex(w => w.date === todayStr);
-
-            if (index !== -1) {
-                if (appData.workouts[index].isRestDay) {
-                    // Remove rest day
-                    appData.workouts.splice(index, 1);
-                } else {
-                    // Turn into rest day
-                    appData.workouts[index].isRestDay = true;
-                    appData.workouts[index].title = "Planned Rest Day";
-                }
-            } else {
-                // Log new rest day
-                appData.workouts.push({
-                    id: 'log_' + Date.now(),
-                    date: todayStr,
-                    title: "Planned Rest Day",
-                    category: "Rest",
-                    duration: 0,
-                    calories: 0,
-                    intensity: "Low",
-                    notes: "Rest Day taken to recover while keeping streak safe.",
-                    isRestDay: true
-                });
-            }
-
-            recalculateStreak();
-            renderAllViews();
-        }
-
-        function logPresetWorkout(preset) {
-            const todayStr = getTodayKey();
-            appData.workouts.push({
-                id: 'log_' + Date.now(),
-                date: todayStr,
-                title: preset.title,
-                category: preset.category,
-                duration: preset.duration,
-                calories: preset.calories,
-                intensity: preset.intensity,
-                notes: `Logged via Quick Preset: ${preset.title}`,
-                isRestDay: false
-            });
-
-            recalculateStreak();
-            renderAllViews();
-            triggerCelebration(`Logged ${preset.title}!`);
-        }
-
-        function editWorkoutLog(id) {
-            const log = appData.workouts.find(w => w.id === id);
-            if (!log) return;
-
-            openLogModal();
-            document.getElementById('editingLogId').value = log.id;
-            document.getElementById('logModalTitle').innerText = 'Edit Workout Entry';
-            document.getElementById('formDate').value = log.date;
-            document.getElementById('formTitle').value = log.title;
-            document.getElementById('formCategory').value = log.isRestDay ? 'Other' : log.category;
-            document.getElementById('formDuration').value = log.duration;
-            document.getElementById('formCalories').value = log.calories || '';
-            document.getElementById('formIntensity').value = log.intensity || 'Moderate';
-            document.getElementById('formNotes').value = log.notes || '';
-        }
-
-        function deleteWorkoutLog(id) {
-            if (confirm("Delete this entry from your memory history?")) {
-                appData.workouts = appData.workouts.filter(w => w.id !== id);
-                recalculateStreak();
-                renderAllViews();
-            }
-        }
-
-        /* ==========================================================================
-           SETTINGS / PROFILE MODAL
-           ========================================================================== */
-
-        function openProfileModal() {
-            document.getElementById('profName').value = appData.profile?.name || "Alex";
-            document.getElementById('profWeeklyGoal').value = appData.profile?.weeklyGoalDays || 5;
-            document.getElementById('profDailyMins').value = appData.profile?.dailyTargetMins || 45;
-
-            const modal = document.getElementById('profileModal');
-            modal.classList.remove('hidden');
-            setTimeout(() => modal.classList.remove('opacity-0'), 10);
-        }
-
-        function closeProfileModal() {
-            const modal = document.getElementById('profileModal');
-            modal.classList.add('opacity-0');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        }
-
-        function saveProfileSettings(e) {
-            e.preventDefault();
-            appData.profile = {
-                name: document.getElementById('profName').value.trim() || "Alex",
-                weeklyGoalDays: parseInt(document.getElementById('profWeeklyGoal').value) || 5,
-                dailyTargetMins: parseInt(document.getElementById('profDailyMins').value) || 45
-            };
-
-            saveMemory();
-            renderAllViews();
-            closeProfileModal();
-        }
-
-        /* ==========================================================================
-           CELEBRATION CONFETTI
-           ========================================================================== */
-
-        function triggerCelebration(msg) {
-            if (typeof confetti === 'function') {
-                confetti({
-                    particleCount: 110,
-                    spread: 80,
-                    origin: { y: 0.6 },
-                    colors: ['#FF5722', '#FF3D00', '#00E676', '#00B0FF', '#FFAB00']
-                });
-            }
-
-            document.getElementById('celebrationText').innerText = msg;
-            document.getElementById('celebrationStreakVal').innerText = `${appData.currentStreak} ${appData.currentStreak === 1 ? 'Day' : 'Days'}`;
-
-            const modal = document.getElementById('celebrationModal');
-            modal.classList.remove('hidden');
-            setTimeout(() => modal.classList.remove('opacity-0'), 10);
-        }
-
-        function closeCelebrationModal() {
-            const modal = document.getElementById('celebrationModal');
-            modal.classList.add('opacity-0');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        }
-
-        /* ==========================================================================
-           DATA MANAGEMENT / BACKUP & RESTORE
-           ========================================================================== */
-
-        function exportJSONBackup() {
-            const jsonStr = JSON.stringify(appData, null, 2);
-            const blob = new Blob([jsonStr], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `FitStreak_Backup_${getTodayKey()}.json`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-        }
-
-        function importJSONBackup(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const parsed = JSON.parse(e.target.result);
-                    if (parsed && Array.isArray(parsed.workouts)) {
-                        appData = parsed;
-                        recalculateStreak();
-                        renderAllViews();
-                        alert("Your data backup has been successfully restored!");
-                    } else {
-                        alert("Invalid file format.");
-                    }
-                } catch (err) {
-                    alert("Error reading backup file.");
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function confirmResetAllData() {
-            if (confirm("Are you sure you want to reset all personal records and clear workout history memory?")) {
-                appData = {
-                    profile: { name: "Alex", weeklyGoalDays: 5, dailyTargetMins: 45 },
-                    workouts: [],
-                    currentStreak: 0,
-                    longestStreak: 0
-                };
-                saveMemory();
-                renderAllViews();
-            }
-        }
-    </script>
+        
+        grid.appendChild(dayCell);
+      }
+    }
+
+    function updateTrackerUI() {
+      const logs = getStoredLogs();
+      const streak = calculateStreak(logs);
+      
+      document.getElementById('streakCount').textContent = `${streak} Day${streak === 1 ? '' : 's'}`;
+      
+      const msgElem = document.getElementById('streakMessage');
+      if (streak > 0) {
+        msgElem.textContent = "You're on fire! Keep the momentum going.";
+      } else {
+        msgElem.textContent = "Log a workout today to start your streak!";
+      }
+
+      renderCalendar(logs);
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      renderPresets();
+      updateTrackerUI();
+    });
+  </script>
 </body>
 </html>
